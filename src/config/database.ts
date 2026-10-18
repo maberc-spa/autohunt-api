@@ -1,10 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 
 export const prisma = new PrismaClient({
-  log: ["query", "error", "warn"],
+  log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
 });
 
-// Función para conectar a la base de datos
 export const connectDatabase = async () => {
   try {
     await prisma.$connect();
@@ -15,7 +14,6 @@ export const connectDatabase = async () => {
   }
 };
 
-// Función para desconectar de la base de datos
 export const disconnectDatabase = async () => {
   await prisma.$disconnect();
   console.log("Desconectado de la base de datos");

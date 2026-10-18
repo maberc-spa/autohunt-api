@@ -1,130 +1,70 @@
 {
   "info": {
     "name": "AutoHunt API",
-    "description": "Colección completa de la API AutoHunt con CRUD para Users, Cars, Models y Brands",
+    "description": "CRUD para vehículos, mantenimientos y catálogos",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" }
+  ],
   "item": [
     {
-      "name": "Health",
+      "name": "Auth",
       "item": [
         {
-          "name": "Health Check",
+          "name": "Register",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/health",
-              "host": ["{{base_url}}"],
-              "path": ["api", "health"]
-            }
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@example.com\",\n  \"password\": \"password123\",\n  \"countryId\": 1\n}"
+            },
+            "url": "{{base_url}}/api/auth/register"
           }
         },
         {
-          "name": "Readiness Check",
+          "name": "Login",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/health/ready",
-              "host": ["{{base_url}}"],
-              "path": ["api", "health", "ready"]
-            }
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@autohunt.dev\",\n  \"password\": \"demo12345\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/login"
           }
         },
         {
-          "name": "Liveness Check",
+          "name": "Me",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/health/live",
-              "host": ["{{base_url}}"],
-              "path": ["api", "health", "live"]
-            }
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/auth/me"
           }
         }
       ]
     },
     {
-      "name": "Users",
+      "name": "Health",
       "item": [
+        { "name": "Health Check", "request": { "method": "GET", "url": "{{base_url}}/api/health" } },
+        { "name": "Readiness", "request": { "method": "GET", "url": "{{base_url}}/api/health/ready" } },
+        { "name": "Liveness", "request": { "method": "GET", "url": "{{base_url}}/api/health/live" } }
+      ]
+    },
+    {
+      "name": "Countries",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{base_url}}/api/countries" } },
         {
-          "name": "Get All Users",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/users",
-              "host": ["{{base_url}}"],
-              "path": ["api", "users"]
-            }
-          }
-        },
-        {
-          "name": "Get User By ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/users/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "users", "1"]
-            }
-          }
-        },
-        {
-          "name": "Create User",
+          "name": "Create",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan.perez@example.com\",\n  \"password\": \"password123\",\n  \"contributions\": 0\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/users",
-              "host": ["{{base_url}}"],
-              "path": ["api", "users"]
-            }
-          }
-        },
-        {
-          "name": "Update User",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Juan Pérez Actualizado\",\n  \"email\": \"juan.perez.updated@example.com\",\n  \"contributions\": 5\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/users/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "users", "1"]
-            }
-          }
-        },
-        {
-          "name": "Delete User",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/users/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "users", "1"]
-            }
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Chile\",\n  \"code\": \"CHL\"\n}" },
+            "url": "{{base_url}}/api/countries"
           }
         }
       ]
@@ -132,82 +72,14 @@
     {
       "name": "Brands",
       "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{base_url}}/api/brands" } },
         {
-          "name": "Get All Brands",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/brands",
-              "host": ["{{base_url}}"],
-              "path": ["api", "brands"]
-            }
-          }
-        },
-        {
-          "name": "Get Brand By ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/brands/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "brands", "1"]
-            }
-          }
-        },
-        {
-          "name": "Create Brand",
+          "name": "Create",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Toyota\",\n  \"country\": \"Japón\",\n  \"logo\": \"https://example.com/toyota-logo.png\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/brands",
-              "host": ["{{base_url}}"],
-              "path": ["api", "brands"]
-            }
-          }
-        },
-        {
-          "name": "Update Brand",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Toyota Motors\",\n  \"country\": \"Japón\",\n  \"logo\": \"https://example.com/toyota-updated-logo.png\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/brands/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "brands", "1"]
-            }
-          }
-        },
-        {
-          "name": "Delete Brand",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/brands/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "brands", "1"]
-            }
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Toyota\",\n  \"countryId\": 1\n}" },
+            "url": "{{base_url}}/api/brands"
           }
         }
       ]
@@ -215,175 +87,137 @@
     {
       "name": "Models",
       "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{base_url}}/api/models" } },
         {
-          "name": "Get All Models",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/models",
-              "host": ["{{base_url}}"],
-              "path": ["api", "models"]
-            }
-          }
-        },
-        {
-          "name": "Get Model By ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/models/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "models", "1"]
-            }
-          }
-        },
-        {
-          "name": "Create Model",
+          "name": "Create",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Corolla\",\n  \"year\": 2024,\n  \"cylinderCapacity\": 1800,\n  \"transmission\": \"Automática\",\n  \"horsePower\": 140,\n  \"fuelType\": \"GASOLINE\",\n  \"weight\": 1300\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/models",
-              "host": ["{{base_url}}"],
-              "path": ["api", "models"]
-            }
-          }
-        },
-        {
-          "name": "Update Model",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Corolla Hybrid\",\n  \"year\": 2024,\n  \"cylinderCapacity\": 1800,\n  \"transmission\": \"CVT\",\n  \"horsePower\": 140,\n  \"fuelType\": \"HYBRID\",\n  \"weight\": 1350\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/models/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "models", "1"]
-            }
-          }
-        },
-        {
-          "name": "Delete Model",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/models/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "models", "1"]
-            }
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Corolla\",\n  \"brandId\": 1\n}" },
+            "url": "{{base_url}}/api/models"
           }
         }
       ]
     },
     {
-      "name": "Cars",
+      "name": "Vehicle Types",
       "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{base_url}}/api/vehicle-types" } },
         {
-          "name": "Get All Cars",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/cars",
-              "host": ["{{base_url}}"],
-              "path": ["api", "cars"]
-            }
-          }
-        },
-        {
-          "name": "Get Car By ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/cars/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "cars", "1"]
-            }
-          }
-        },
-        {
-          "name": "Create Car",
+          "name": "Create",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"brandId\": 1,\n  \"modelId\": 1,\n  \"year\": 2024,\n  \"price\": 25000\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/cars",
-              "host": ["{{base_url}}"],
-              "path": ["api", "cars"]
-            }
-          }
-        },
-        {
-          "name": "Update Car",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"brandId\": 1,\n  \"modelId\": 1,\n  \"year\": 2024,\n  \"price\": 26000\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/cars/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "cars", "1"]
-            }
-          }
-        },
-        {
-          "name": "Delete Car",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/cars/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "cars", "1"]
-            }
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Sedan\",\n  \"description\": \"Automóvil de turismo\"\n}" },
+            "url": "{{base_url}}/api/vehicle-types"
           }
         }
       ]
-    }
-  ],
-  "variable": [
+    },
     {
-      "key": "base_url",
-      "value": "http://localhost:3000",
-      "type": "string"
+      "name": "Users",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{base_url}}/api/users" } },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@example.com\",\n  \"password\": \"password123\",\n  \"countryId\": 1\n}"
+            },
+            "url": "{{base_url}}/api/users"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{base_url}}/api/vehicles" } },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"brandId\": 1,\n  \"modelId\": 1,\n  \"vehicleTypeId\": 1,\n  \"year\": 2024,\n  \"mileage\": 15000\n}"
+            },
+            "url": "{{base_url}}/api/vehicles"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Maintenance Types",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{base_url}}/api/maintenance-types" } },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cambio de aceite\",\n  \"description\": \"Reemplazo de aceite y filtro\"\n}"
+            },
+            "url": "{{base_url}}/api/maintenance-types"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Maintenances",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{base_url}}/api/maintenances" } },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": 1,\n  \"performedAt\": \"2024-06-15T10:00:00.000Z\",\n  \"mileageAtService\": 16000,\n  \"totalCost\": 89.99\n}"
+            },
+            "url": "{{base_url}}/api/maintenances"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Maintenances",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{base_url}}/api/user-maintenances" } },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"maintenanceId\": 1,\n  \"role\": \"OWNER\"\n}" },
+            "url": "{{base_url}}/api/user-maintenances"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Maintenance Details",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{base_url}}/api/maintenance-details" } },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maintenanceId\": 1,\n  \"maintenanceTypeId\": 1,\n  \"description\": \"Aceite sintético\",\n  \"cost\": 45.50,\n  \"quantity\": 1\n}"
+            },
+            "url": "{{base_url}}/api/maintenance-details"
+          }
+        }
+      ]
     }
   ]
 }

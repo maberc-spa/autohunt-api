@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: autohunt-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Requeridas — configúralas en el dashboard de Render:
+      # DATABASE_URL  → Neon "Pooled connection" (postgresql://...-pooler...)
+      # DIRECT_URL    → Neon "Direct connection" (postgresql://... sin -pooler)
+      #                 (opcional si usas Neon: se deriva de DATABASE_URL)
+      # JWT_SECRET    → openssl rand -base64 32

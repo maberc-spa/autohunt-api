@@ -1,9 +1,8 @@
-// Define aquí la interfaz Brand
 export default interface Brand {
   id: number;
   name: string;
-  country: string;
-  logo: string;
+  logo: string | null;
+  countryId: number;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,256 +1,82 @@
 # Comandos cURL para AutoHunt API
 
-## 🏥 Health Check
+Base: `http://localhost:3000/api`
 
-### Health Check Principal
+## Autenticación
 
-```bash
-curl -X GET http://localhost:3000/api/health
-```
-
-### Readiness Check
+Registro (público):
 
 ```bash
-curl -X GET http://localhost:3000/api/health/ready
-```
-
-### Liveness Check
-
-```bash
-curl -X GET http://localhost:3000/api/health/live
-```
-
----
-
-## 👤 Users
-
-### Obtener todos los usuarios
-
-```bash
-curl -X GET http://localhost:3000/api/users
-```
-
-### Obtener un usuario por ID
-
-```bash
-curl -X GET http://localhost:3000/api/users/1
-```
-
-### Crear un usuario
-
-```bash
-curl -X POST http://localhost:3000/api/users \
+curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Juan Pérez",
-    "email": "juan.perez@example.com",
-    "password": "password123",
-    "contributions": 0
-  }'
+  -d '{"name":"Juan Pérez","email":"juan@example.com","password":"password123","countryId":1}'
 ```
 
-### Actualizar un usuario
+Login (público):
 
 ```bash
-curl -X PUT http://localhost:3000/api/users/1 \
+curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Juan Pérez Actualizado",
-    "email": "juan.perez.updated@example.com",
-    "contributions": 5
-  }'
+  -d '{"email":"juan@example.com","password":"password123"}'
 ```
 
-### Eliminar un usuario
+Guarda el `token` de la respuesta y úsalo en rutas protegidas:
 
 ```bash
-curl -X DELETE http://localhost:3000/api/users/1
+export TOKEN="eyJhbGciOiJIUzI1NiIs..."
+curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/auth/me
 ```
 
----
-
-## 🏷️ Brands (Marcas)
-
-### Obtener todas las marcas
+Perfil (requiere token):
 
 ```bash
-curl -X GET http://localhost:3000/api/brands
+curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/users/me
+curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  http://localhost:3000/api/users/me -d '{"name":"Juan Actualizado"}'
 ```
 
-### Obtener una marca por ID
+## Health (público)
 
 ```bash
-curl -X GET http://localhost:3000/api/brands/1
+curl http://localhost:3000/api/health
+curl http://localhost:3000/api/health/ready
 ```
 
-### Crear una marca
+## Catálogos — lectura pública, escritura con token
 
 ```bash
-curl -X POST http://localhost:3000/api/brands \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Toyota",
-    "country": "Japón",
-    "logo": "https://example.com/toyota-logo.png"
-  }'
+# Público
+curl http://localhost:3000/api/countries
+curl http://localhost:3000/api/brands
+
+# Requiere token
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  http://localhost:3000/api/countries -d '{"name":"Chile","code":"CHL"}'
 ```
 
-### Actualizar una marca
+## Recursos del usuario — siempre requieren token
 
 ```bash
-curl -X PUT http://localhost:3000/api/brands/1 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Toyota Motors",
-    "country": "Japón",
-    "logo": "https://example.com/toyota-updated-logo.png"
-  }'
+curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/vehicles
+
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  http://localhost:3000/api/vehicles \
+  -d '{"brandId":1,"modelId":1,"vehicleTypeId":1,"year":2024,"mileage":15000}'
+
+curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/maintenances
 ```
 
-### Eliminar una marca
+## Orden recomendado
 
-```bash
-curl -X DELETE http://localhost:3000/api/brands/1
-```
+1. `POST /auth/register` o login con seed (`demo@autohunt.dev` / `demo12345`)
+2. Catálogos (countries, brands, models, vehicle-types, maintenance-types)
+3. `POST /vehicles` → `POST /maintenances` → `POST /maintenance-details`
 
----
+## Permisos por recurso
 
-## 📋 Models (Modelos de vehículos)
-
-### Obtener todos los modelos
-
-```bash
-curl -X GET http://localhost:3000/api/models
-```
-
-### Obtener un modelo por ID
-
-```bash
-curl -X GET http://localhost:3000/api/models/1
-```
-
-### Crear un modelo
-
-```bash
-curl -X POST http://localhost:3000/api/models \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Corolla",
-    "year": 2024,
-    "cylinderCapacity": 1800,
-    "transmission": "Automática",
-    "horsePower": 140,
-    "fuelType": "GASOLINE",
-    "weight": 1300
-  }'
-```
-
-### Actualizar un modelo
-
-```bash
-curl -X PUT http://localhost:3000/api/models/1 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Corolla Hybrid",
-    "year": 2024,
-    "cylinderCapacity": 1800,
-    "transmission": "CVT",
-    "horsePower": 140,
-    "fuelType": "HYBRID",
-    "weight": 1350
-  }'
-```
-
-### Eliminar un modelo
-
-```bash
-curl -X DELETE http://localhost:3000/api/models/1
-```
-
----
-
-## 🚗 Cars (Autos)
-
-### Obtener todos los autos
-
-```bash
-curl -X GET http://localhost:3000/api/cars
-```
-
-### Obtener un auto por ID
-
-```bash
-curl -X GET http://localhost:3000/api/cars/1
-```
-
-### Crear un auto
-
-```bash
-curl -X POST http://localhost:3000/api/cars \
-  -H "Content-Type: application/json" \
-  -d '{
-    "brandId": 1,
-    "modelId": 1,
-    "year": 2024,
-    "price": 25000
-  }'
-```
-
-### Actualizar un auto
-
-```bash
-curl -X PUT http://localhost:3000/api/cars/1 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "brandId": 1,
-    "modelId": 1,
-    "year": 2024,
-    "price": 26000
-  }'
-```
-
-### Eliminar un auto
-
-```bash
-curl -X DELETE http://localhost:3000/api/cars/1
-```
-
----
-
-## 📝 Notas Importantes
-
-### Orden de creación recomendado:
-
-1. **Primero**: Crear Brands (marcas)
-2. **Segundo**: Crear Models (modelos)
-3. **Tercero**: Crear Cars (autos que referencian brandId y modelId)
-4. **Users**: Pueden crearse en cualquier momento (independientes)
-
-### Tipos de combustible válidos (fuelType):
-
-- `GASOLINE`
-- `DIESEL`
-- `ELECTRIC`
-- `HYBRID`
-- `OTHER`
-
-### Formato de respuestas exitosas:
-
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "Operación exitosa"
-}
-```
-
-### Formato de respuestas con error:
-
-```json
-{
-  "success": false,
-  "message": "Descripción del error",
-  "error": "Detalle técnico del error"
-}
-```
-
+| Recurso | GET | POST/PUT/DELETE |
+|---|---|---|
+| `/health`, `/auth/register`, `/auth/login` | Público | Público (login/register) |
+| Catálogos (`countries`, `brands`, …) | Público | Token requerido |
+| `/users/me` | Token | Token |
+| `vehicles`, `maintenances`, etc. | Token (solo propios) | Token (solo propios) |

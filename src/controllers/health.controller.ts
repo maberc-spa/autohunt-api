@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
+import { prisma } from "../config/database";
 
 class HealthController {
-  // Health check endpoint
-  async healthCheck(req: Request, res: Response) {
+  healthCheck(_: Request, res: Response): void {
     res.json({
       success: true,
       message: "🚀 API AutoHunt funcionando correctamente",
@@ -17,27 +17,26 @@ class HealthController {
     });
   }
 
-  // Readiness check
-  async readinessCheck(req: Request, res: Response) {
+  async readinessCheck(_: Request, res: Response): Promise<void> {
     try {
-      // Aquí puedes agregar verificaciones adicionales
-      // Por ejemplo: verificar conexión a la base de datos
+      await prisma.$queryRaw`SELECT 1`;
       res.json({
         success: true,
         status: "ready",
+        database: "connected",
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
       res.status(503).json({
         success: false,
         status: "not ready",
+        database: "disconnected",
         error: error instanceof Error ? error.message : "Error desconocido",
       });
     }
   }
 
-  // Liveness check
-  async livenessCheck(req: Request, res: Response) {
+  livenessCheck(_: Request, res: Response): void {
     res.json({
       success: true,
       status: "alive",

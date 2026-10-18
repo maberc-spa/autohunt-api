@@ -1,16 +1,24 @@
 import dotenv from "dotenv";
+import { execSync } from "child_process";
 import app from "./app";
 import { connectDatabase, disconnectDatabase } from "./config/database";
+import { validateEnv } from "./config/env";
 
-// Cargar variables de entorno
 dotenv.config();
+validateEnv();
 
 const PORT = process.env.PORT || 3000;
 
-// Iniciar servidor
+const runMigrations = () => {
+  if (process.env.NODE_ENV === "production") {
+    console.log("Aplicando migraciones...");
+    execSync("npx prisma migrate deploy", { stdio: "inherit" });
+  }
+};
+
 const startServer = async () => {
   try {
-    // Conectar a la base de datos
+    runMigrations();
     await connectDatabase();
 
     // Iniciar el servidor

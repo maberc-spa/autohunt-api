@@ -1,109 +1,106 @@
 # AutoHunt API
 
-API REST construida con Node.js, Express, TypeScript, Prisma y PostgreSQL (Neon).
+API REST para gestión de vehículos y mantenimientos. Construida con Node.js, Express, TypeScript, Prisma y PostgreSQL (Neon).
 
-## 🚀 Tecnologías
+## Tecnologías
 
-- **Node.js** - Entorno de ejecución
-- **Express** - Framework web
-- **TypeScript** - Tipado estático
-- **Prisma** - ORM para base de datos
-- **PostgreSQL** - Base de datos (Neon Console)
+- **Node.js** + **Express** + **TypeScript**
+- **Prisma** + **PostgreSQL** (Neon)
+- **Zod** — validación de requests
+- **bcrypt** — hash de contraseñas
+- **jsonwebtoken** — autenticación JWT
+- **helmet** — headers de seguridad HTTP
 
-## 📦 Instalación
-
-1. Instalar dependencias:
+## Instalación
 
 ```bash
 npm install
-```
-
-2. Configurar variables de entorno:
-
-```bash
 cp .env.example .env
-```
-
-3. Configurar tu `DATABASE_URL` en el archivo `.env` con tu conexión de Neon:
-
-```
-DATABASE_URL="postgresql://user:password@host:5432/database?sslmode=require"
-```
-
-4. Generar el cliente de Prisma:
-
-```bash
+# Configura DATABASE_URL, DIRECT_URL y JWT_SECRET
 npm run prisma:generate
-```
-
-5. Ejecutar migraciones:
-
-```bash
 npm run prisma:migrate
+npm run prisma:seed   # opcional: datos de demo
 ```
 
-## 🏃‍♂️ Ejecución
-
-### Modo desarrollo
+## Ejecución
 
 ```bash
-npm run dev
+npm run dev          # desarrollo con hot reload
+npm run build && npm start   # producción
+npm test             # unit tests
+npm run test:watch   # tests en modo watch
 ```
 
-### Modo producción
+## Endpoints
+
+Base URL: `http://localhost:3000/api`
+
+### Autenticación (público)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/auth/register` | Registro de usuario |
+| POST | `/auth/login` | Inicio de sesión (devuelve JWT) |
+| GET | `/auth/me` | Perfil del usuario autenticado |
+
+Incluye el token en rutas protegidas: `Authorization: Bearer <token>`
+
+### Catálogos (GET público, escritura con token)
+
+`/countries`, `/brands`, `/models`, `/vehicle-types`, `/maintenance-types`
+
+### Recursos protegidos (requieren token, solo datos propios)
+
+| Recurso | Ruta |
+|---|---|
+| Perfil | `/users/me` |
+| Vehículos | `/vehicles` |
+| Mantenimientos | `/maintenances` |
+| User maintenances | `/user-maintenances` |
+| Maintenance details | `/maintenance-details` |
+
+### Health (público)
+
+`/health`, `/health/ready`, `/health/live`
+
+Ver ejemplos en [`CURL_COMMANDS.md`](./CURL_COMMANDS.md) o importar [`postman_collection.json`](./postman_collection.json).
+
+## Estructura
+
+```
+autohunt-api/
+├── prisma/
+│   ├── schema.prisma
+│   ├── migrations/
+│   └── seed.ts
+├── src/
+│   ├── config/         # Conexión a BD
+│   ├── controllers/    # Lógica de endpoints
+│   ├── interfaces/     # Tipos TypeScript
+│   ├── middleware/     # Validación, errores, 404
+│   ├── routes/         # Rutas Express
+│   ├── validators/     # Schemas Zod
+│   ├── utils/          # CRUD factory, errores, password
+│   ├── app.ts
+│   └── index.ts
+└── ...
+```
+
+## Entidades
+
+- **Country**, **Brand**, **Model**, **VehicleType**
+- **User**, **Vehicle**
+- **MaintenanceType**, **Maintenance**, **UserMaintenance**, **MaintenanceDetail**
+
+## Producción
 
 ```bash
 npm run build
+npm run prisma:migrate:deploy
 npm start
 ```
 
-## 📊 Prisma Studio
+## Recursos
 
-Para explorar y manipular tu base de datos visualmente:
-
-```bash
-npm run prisma:studio
-```
-
-## 📁 Estructura del Proyecto
-
-```
-autohunt/
-├── prisma/
-│   └── schema.prisma        # Schema de la base de datos
-├── src/
-│   ├── config/              # Configuraciones
-│   │   └── database.ts      # Conexión a base de datos
-│   ├── interfaces/          # Interfaces de TypeScript
-│   │   ├── User.ts
-│   │   ├── Car.ts
-│   │   ├── Model.ts
-│   │   ├── Brand.ts
-│   │   └── index.ts
-│   ├── app.ts               # Configuración de Express
-│   └── index.ts             # Punto de entrada
-├── .gitignore
-├── package.json
-├── tsconfig.json
-└── README.md
-```
-
-## 🔑 Entidades
-
-- **User** - Usuarios del sistema
-- **Car** - Vehículos
-- **Model** - Modelos de vehículos
-- **Brand** - Marcas de vehículos
-
-## 📝 Notas
-
-1. Define tus interfaces en los archivos correspondientes en `src/interfaces/`
-2. Actualiza el schema de Prisma en `prisma/schema.prisma`
-3. Crea tus controladores y rutas según necesites
-
-## 🔗 Recursos
-
-- [Neon Console](https://neon.tech/) - Base de datos PostgreSQL serverless
+- [Neon Console](https://console.neon.tech/)
 - [Prisma Docs](https://www.prisma.io/docs)
-- [Express Docs](https://expressjs.com/)
-- [TypeScript Docs](https://www.typescriptlang.org/docs/)

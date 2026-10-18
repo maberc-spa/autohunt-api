@@ -7,9 +7,6 @@ dist/
 # Environment variables
 .env
 
-# Prisma
-prisma/migrations/
-
 # IDE
 .vscode/
 .idea/
@@ -30,4 +27,3 @@ yarn-error.log*
 # Testing
 coverage/
 .nyc_output/
-

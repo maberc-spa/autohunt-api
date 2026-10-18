@@ -1,114 +1,68 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/database";
+import { sendError } from "../utils/errors";
+import { hashPassword } from "../utils/password";
+
+const userSelect = {
+  id: true,
+  name: true,
+  email: true,
+  countryId: true,
+  createdAt: true,
+  updatedAt: true,
+};
 
 class UserController {
-  // Obtener todos los usuarios
-  async getAllUsers(req: Request, res: Response) {
+  async getMe(req: Request, res: Response): Promise<void> {
     try {
-      const users = await prisma.user.findMany();
-      res.json({
-        success: true,
-        data: users,
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Error al obtener usuarios",
-        error: error instanceof Error ? error.message : "Error desconocido",
-      });
-    }
-  }
-
-  // Obtener un usuario por ID
-  async getUserById(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
       const user = await prisma.user.findUnique({
-        where: { id: parseInt(id) },
+        where: { id: req.user!.userId },
+        select: userSelect,
       });
 
       if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "Usuario no encontrado",
-        });
+        res.status(404).json({ success: false, message: "Usuario no encontrado" });
+        return;
       }
 
-      res.json({
-        success: true,
-        data: user,
-      });
+      res.json({ success: true, data: user });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Error al obtener usuario",
-        error: error instanceof Error ? error.message : "Error desconocido",
-      });
+      sendError(res, error);
     }
   }
 
-  // Crear un nuevo usuario
-  async createUser(req: Request, res: Response) {
+  async updateMe(req: Request, res: Response): Promise<void> {
     try {
-      const user = await prisma.user.create({
-        data: req.body,
-      });
-
-      res.status(201).json({
-        success: true,
-        data: user,
-        message: "Usuario creado exitosamente",
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Error al crear usuario",
-        error: error instanceof Error ? error.message : "Error desconocido",
-      });
-    }
-  }
-
-  // Actualizar un usuario
-  async updateUser(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const user = await prisma.user.update({
-        where: { id: parseInt(id) },
-        data: req.body,
+      const { password, ...rest } = req.body;
+      const data = await prisma.user.update({
+        where: { id: req.user!.userId },
+        data: {
+          ...rest,
+          ...(password ? { password: await hashPassword(password) } : {}),
+        },
+        select: userSelect,
       });
 
       res.json({
         success: true,
-        data: user,
-        message: "Usuario actualizado exitosamente",
+        data,
+        message: "Perfil actualizado exitosamente",
       });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Error al actualizar usuario",
-        error: error instanceof Error ? error.message : "Error desconocido",
-      });
+      sendError(res, error);
     }
   }
 
-  // Eliminar un usuario
-  async deleteUser(req: Request, res: Response) {
+  async deleteMe(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      await prisma.user.delete({
-        where: { id: parseInt(id) },
-      });
+      await prisma.user.delete({ where: { id: req.user!.userId } });
 
       res.json({
         success: true,
-        message: "Usuario eliminado exitosamente",
+        message: "Cuenta eliminada exitosamente",
       });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Error al eliminar usuario",
-        error: error instanceof Error ? error.message : "Error desconocido",
-      });
+      sendError(res, error);
     }
   }
 }

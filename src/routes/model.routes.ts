@@ -1,13 +1,9 @@
-import { Router } from "express";
 import modelController from "../controllers/model.controller";
+import { createCrudRoutes } from "../utils/crudRoutes";
+import { createModelSchema, updateModelSchema } from "../validators";
 
-const router = Router();
-
-// Rutas para modelos
-router.get("/", modelController.getAllModels.bind(modelController));
-router.get("/:id", modelController.getModelById.bind(modelController));
-router.post("/", modelController.createModel.bind(modelController));
-router.put("/:id", modelController.updateModel.bind(modelController));
-router.delete("/:id", modelController.deleteModel.bind(modelController));
-
-export default router;
+export default createCrudRoutes(
+  modelController,
+  { create: createModelSchema, update: updateModelSchema },
+  { publicRead: true }
+);

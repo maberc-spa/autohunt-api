@@ -1,13 +1,9 @@
-import { Router } from "express";
 import brandController from "../controllers/brand.controller";
+import { createCrudRoutes } from "../utils/crudRoutes";
+import { createBrandSchema, updateBrandSchema } from "../validators";
 
-const router = Router();
-
-// Rutas para marcas
-router.get("/", brandController.getAllBrands.bind(brandController));
-router.get("/:id", brandController.getBrandById.bind(brandController));
-router.post("/", brandController.createBrand.bind(brandController));
-router.put("/:id", brandController.updateBrand.bind(brandController));
-router.delete("/:id", brandController.deleteBrand.bind(brandController));
-
-export default router;
+export default createCrudRoutes(
+  brandController,
+  { create: createBrandSchema, update: updateBrandSchema },
+  { publicRead: true }
+);

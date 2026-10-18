@@ -1,0 +1,17 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+*.md
+coverage
+.nyc_output
+tests
+.vscode
+.idea
+*.log
+.agents
+skills-lock.json
+postman_collection.json

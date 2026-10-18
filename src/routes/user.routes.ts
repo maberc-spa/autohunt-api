@@ -1,13 +1,15 @@
 import { Router } from "express";
 import userController from "../controllers/user.controller";
+import { validate } from "../middleware/validate-request";
+import { authenticate } from "../middleware/auth";
+import { updateUserSchema } from "../validators";
 
 const router = Router();
 
-// Rutas para usuarios
-router.get("/", userController.getAllUsers.bind(userController));
-router.get("/:id", userController.getUserById.bind(userController));
-router.post("/", userController.createUser.bind(userController));
-router.put("/:id", userController.updateUser.bind(userController));
-router.delete("/:id", userController.deleteUser.bind(userController));
+router.use(authenticate);
+
+router.get("/me", userController.getMe.bind(userController));
+router.put("/me", validate(updateUserSchema), userController.updateMe.bind(userController));
+router.delete("/me", userController.deleteMe.bind(userController));
 
 export default router;
