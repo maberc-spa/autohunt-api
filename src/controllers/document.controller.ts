@@ -3,9 +3,11 @@ import { prisma } from "../config/database";
 import { AppError, parseIdParam, sendError } from "../utils/errors";
 import { getOwnedVehicle } from "../utils/ownership";
 import {
+  buildFileUrl,
   createPresignedUpload,
   deleteStoredObject,
   generateFileKey,
+  resolvePublicBaseUrl,
   validateDocumentFile,
 } from "../services/s3.service";
 
@@ -23,10 +25,11 @@ const documentSelect = {
   updatedAt: true,
 };
 
-const buildDownloadUrl = (fileKey: string): string => {
-  const baseUrl = process.env.API_PUBLIC_URL?.replace(/\/$/, "") ?? "";
-  return `${baseUrl}/api/uploads/${fileKey}`;
-};
+const requestBaseUrl = (req: Request): string =>
+  resolvePublicBaseUrl(`${req.protocol}://${req.get("host")}`);
+
+const buildDownloadUrl = (req: Request, fileKey: string): string =>
+  buildFileUrl(requestBaseUrl(req), fileKey);
 
 class DocumentController {
   async listByVehicle(req: Request, res: Response): Promise<void> {
@@ -44,7 +47,7 @@ class DocumentController {
         success: true,
         data: data.map((doc) => ({
           ...doc,
-          downloadUrl: buildDownloadUrl(doc.fileKey),
+          downloadUrl: buildDownloadUrl(req, doc.fileKey),
         })),
       });
     } catch (error) {
@@ -75,7 +78,11 @@ class DocumentController {
         select: documentSelect,
       });
 
-      const presigned = createPresignedUpload(document.id, fileKey);
+      const presigned = createPresignedUpload(
+        document.id,
+        fileKey,
+        requestBaseUrl(req)
+      );
       res.status(201).json({
         success: true,
         data: presigned,
@@ -113,7 +120,7 @@ class DocumentController {
         success: true,
         data: {
           ...data,
-          downloadUrl: buildDownloadUrl(data.fileKey),
+          downloadUrl: buildDownloadUrl(req, data.fileKey),
         },
         message: "Documento confirmado",
       });
@@ -170,7 +177,7 @@ class DocumentController {
         success: true,
         data: {
           ...data,
-          downloadUrl: buildDownloadUrl(data.fileKey),
+          downloadUrl: buildDownloadUrl(req, data.fileKey),
         },
         message: "Documento actualizado",
       });
