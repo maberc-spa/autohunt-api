@@ -1,0 +1,26 @@
+services:
+  api:
+    build: .
+    image: autohunt-api:latest
+    container_name: autohunt-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    # Por defecto solo escucha en localhost: Docker se salta UFW al publicar puertos,
+    # así que la API se expone a internet a través del reverse proxy (TLS), no directo.
+    ports:
+      - "${API_BIND:-127.0.0.1}:${API_PORT:-3000}:3000"
+    # Limita los logs para que no llenen el disco
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 512m
+    pids_limit: 200
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

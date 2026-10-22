@@ -104,3 +104,28 @@ npm start
 
 - [Neon Console](https://console.neon.tech/)
 - [Prisma Docs](https://www.prisma.io/docs)
+
+## Despliegue con Docker (servidor Ubuntu)
+
+Imagen multi-stage sobre `node:26-alpine` (npm 12 solo en la etapa de build; el runtime no incluye npm y corre como usuario sin privilegios).
+
+```bash
+# Una vez: instalar Docker Engine + plugin compose
+curl -fsSL https://get.docker.com | sh
+
+# Configurar y desplegar
+cp .env.example .env   # completar DATABASE_URL, DIRECT_URL, JWT_SECRET, API_PUBLIC_URL
+./scripts/deploy.sh    # pull + build + migraciones + up -d + espera healthy + limpieza
+./scripts/deploy.sh rollback   # vuelve a la imagen anterior (no revierte migraciones)
+```
+
+- La API escucha solo en `127.0.0.1:3000` (Docker se salta UFW al publicar puertos). Exponla con un reverse proxy con TLS, por ejemplo Caddy (`/etc/caddy/Caddyfile`):
+  ```
+  api.tu-dominio.com {
+      reverse_proxy 127.0.0.1:3000
+  }
+  ```
+  `API_BIND` y `API_PORT` cambian la dirección y el puerto del host.
+- Las migraciones se aplican antes de reemplazar el contenedor: si fallan, la versión anterior sigue corriendo.
+- Logs del contenedor limitados a 3 × 10 MB; `deploy.sh` borra imágenes huérfanas y caché de build de más de 72 h.
+- npm 12 bloquea los scripts de instalación de dependencias: las permitidas están en `allowScripts` de `package.json`. Al actualizar Prisma o bcrypt, ejecuta `npm install-scripts approve <paquete>`.

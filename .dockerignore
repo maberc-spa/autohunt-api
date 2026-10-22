@@ -9,9 +9,16 @@ dist
 coverage
 .nyc_output
 tests
+vitest.config.ts
 .vscode
 .idea
 *.log
 .agents
+.claude
 skills-lock.json
 postman_collection.json
+render.yaml
+Dockerfile
+.dockerignore
+docker-compose*.yml
+scripts/deploy.sh
