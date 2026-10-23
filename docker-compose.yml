@@ -11,6 +11,10 @@ services:
     # así que la API se expone a internet a través del reverse proxy (TLS), no directo.
     ports:
       - "${API_BIND:-127.0.0.1}:${API_PORT:-3000}:3000"
+    # Red compartida con el contenedor de Caddy, que enruta a autohunt-api:3000
+    networks:
+      - default
+      - proxy
     # Limita los logs para que no llenen el disco
     logging:
       driver: json-file
@@ -24,3 +28,8 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-web}

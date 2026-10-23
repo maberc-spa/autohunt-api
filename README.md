@@ -119,12 +119,13 @@ cp .env.example .env   # completar DATABASE_URL, DIRECT_URL, JWT_SECRET, API_PUB
 ./scripts/deploy.sh rollback   # vuelve a la imagen anterior (no revierte migraciones)
 ```
 
-- La API escucha solo en `127.0.0.1:3000` (Docker se salta UFW al publicar puertos). Exponla con un reverse proxy con TLS, por ejemplo Caddy (`/etc/caddy/Caddyfile`):
+- La API escucha solo en `127.0.0.1:3000` (Docker se salta UFW al publicar puertos). Se expone a internet a través de Caddy, que corre en su propio contenedor: el compose une la API a la red externa `web` (cámbiala con `PROXY_NETWORK`). **Agrega** este bloque al Caddyfile existente (`/opt/caddy/Caddyfile`), sin reemplazar los demás sitios:
   ```
-  api.tu-dominio.com {
-      reverse_proxy 127.0.0.1:3000
+  autohunt-api.maberc.com {
+      reverse_proxy autohunt-api:3000
   }
   ```
+  Luego `docker exec caddy caddy reload --config /etc/caddy/Caddyfile`. Desde el contenedor de Caddy, `127.0.0.1` es el propio contenedor, no el host.
   `API_BIND` y `API_PORT` cambian la dirección y el puerto del host.
 - Las migraciones se aplican antes de reemplazar el contenedor: si fallan, la versión anterior sigue corriendo.
 - Logs del contenedor limitados a 3 × 10 MB; `deploy.sh` borra imágenes huérfanas y caché de build de más de 72 h.
