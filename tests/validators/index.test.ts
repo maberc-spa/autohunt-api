@@ -6,6 +6,8 @@ import {
   createMaintenanceSchema,
   createUserMaintenanceSchema,
   loginSchema,
+  updateUserSchema,
+  changePasswordSchema,
 } from "../../src/validators";
 
 describe("validators", () => {
@@ -52,6 +54,54 @@ describe("validators", () => {
         lastName: "Pérez",
         email: "not-an-email",
         password: "password123",
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("updateUserSchema", () => {
+    it("accepts names and phone", () => {
+      const result = updateUserSchema.safeParse({
+        firstName: "Juan",
+        lastName: "Pérez",
+        phone: "+56 9 1234 5678",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts clearing the phone", () => {
+      expect(updateUserSchema.safeParse({ phone: "" }).success).toBe(true);
+      expect(updateUserSchema.safeParse({ phone: null }).success).toBe(true);
+    });
+
+    it("rejects invalid phone", () => {
+      const result = updateUserSchema.safeParse({ phone: "abc123" });
+      expect(result.success).toBe(false);
+    });
+
+    it("strips password and email", () => {
+      const result = updateUserSchema.safeParse({
+        email: "x@example.com",
+        password: "password123",
+      });
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({});
+    });
+  });
+
+  describe("changePasswordSchema", () => {
+    it("accepts valid payload", () => {
+      const result = changePasswordSchema.safeParse({
+        currentPassword: "old-password",
+        newPassword: "Password123",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects short new password", () => {
+      const result = changePasswordSchema.safeParse({
+        currentPassword: "old-password",
+        newPassword: "short",
       });
       expect(result.success).toBe(false);
     });

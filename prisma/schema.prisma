@@ -107,6 +107,7 @@ model User {
   lastName           String         @map("last_name")
   name               String
   email              String         @unique
+  phone              String?
   password           String?
   countryId          Int?           @map("country_id")
   emailVerified      Boolean        @default(false) @map("email_verified")

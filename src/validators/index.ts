@@ -103,10 +103,21 @@ export const updateDocumentSchema = z.object({
 export const createUserSchema = registerSchema;
 
 export const updateUserSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  email: z.string().email().optional(),
-  password: z.string().min(8).max(128).optional(),
+  firstName: z.string().trim().min(1).max(50).optional(),
+  lastName: z.string().trim().min(1).max(50).optional(),
+  phone: z
+    .union([
+      z.string().trim().regex(/^\+?[0-9][0-9\s-]{6,19}$/),
+      z.literal(""),
+    ])
+    .optional()
+    .nullable(),
   countryId: optionalInt,
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128).optional(),
+  newPassword: z.string().min(8).max(128),
 });
 
 export const createVehicleSchema = z.object({

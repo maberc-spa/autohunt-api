@@ -1,10 +1,9 @@
 import { Request, Response } from "express";
-import { UserPlan } from "@prisma/client";
 import { prisma } from "../config/database";
 import { AppError, sendError } from "../utils/errors";
 import { comparePassword, hashPassword } from "../utils/password";
 import { signToken } from "../utils/jwt";
-import { getPlanInfo } from "../services/plan-limits";
+import { formatUserProfile, userProfileSelect } from "../utils/user-profile";
 import {
   createTwoFactorChallenge,
   resendTwoFactorCode,
@@ -14,41 +13,6 @@ import {
   findOrCreateSocialUser,
   verifySocialToken,
 } from "../services/oauth.service";
-
-const userSelect = {
-  id: true,
-  username: true,
-  firstName: true,
-  lastName: true,
-  name: true,
-  email: true,
-  countryId: true,
-  emailVerified: true,
-  plan: true,
-  planVehicleLimit: true,
-  twoFactorEnabled: true,
-  createdAt: true,
-  updatedAt: true,
-};
-
-const formatUser = (user: {
-  id: number;
-  username: string;
-  firstName: string;
-  lastName: string;
-  name: string;
-  email: string;
-  countryId: number | null;
-  emailVerified: boolean;
-  plan: UserPlan;
-  planVehicleLimit: number | null;
-  twoFactorEnabled: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}) => ({
-  ...user,
-  ...getPlanInfo(user.plan, user.planVehicleLimit),
-});
 
 class AuthController {
   async register(req: Request, res: Response): Promise<void> {
@@ -66,14 +30,14 @@ class AuthController {
           emailVerified: true,
           password: await hashPassword(password),
         },
-        select: userSelect,
+        select: userProfileSelect,
       });
 
       const token = signToken({ userId: user.id, email: user.email });
 
       res.status(201).json({
         success: true,
-        data: { user: formatUser(user), token },
+        data: { user: formatUserProfile(user), token },
         message: "Usuario registrado exitosamente",
       });
     } catch (error) {
@@ -122,13 +86,13 @@ class AuthController {
       const token = signToken({ userId: user.id, email: user.email });
       const selected = await prisma.user.findUnique({
         where: { id: user.id },
-        select: userSelect,
+        select: userProfileSelect,
       });
 
       res.json({
         success: true,
         data: {
-          user: formatUser(selected!),
+          user: formatUserProfile(selected!),
           token,
         },
         message: "Inicio de sesión exitoso",
@@ -161,7 +125,7 @@ class AuthController {
       const userId = await verifyTwoFactorCode(challengeId, code);
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: userSelect,
+        select: userProfileSelect,
       });
 
       if (!user) {
@@ -171,7 +135,7 @@ class AuthController {
       const token = signToken({ userId: user.id, email: user.email });
       res.json({
         success: true,
-        data: { user: formatUser(user), token },
+        data: { user: formatUserProfile(user), token },
         message: "Verificación exitosa",
       });
     } catch (error) {
@@ -208,7 +172,7 @@ class AuthController {
       const user = await findOrCreateSocialUser(profile);
       const selected = await prisma.user.findUnique({
         where: { id: user.id },
-        select: userSelect,
+        select: userProfileSelect,
       });
 
       const token = signToken({
@@ -218,7 +182,7 @@ class AuthController {
 
       res.json({
         success: true,
-        data: { user: formatUser(selected!), token },
+        data: { user: formatUserProfile(selected!), token },
         message: "Inicio de sesión social exitoso",
       });
     } catch (error) {
@@ -231,14 +195,14 @@ class AuthController {
       const userId = req.user!.userId;
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: userSelect,
+        select: userProfileSelect,
       });
 
       if (!user) {
         throw new AppError(404, "Usuario no encontrado");
       }
 
-      res.json({ success: true, data: formatUser(user) });
+      res.json({ success: true, data: formatUserProfile(user) });
     } catch (error) {
       sendError(res, error);
     }
