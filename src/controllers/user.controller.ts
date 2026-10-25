@@ -3,6 +3,7 @@ import { prisma } from "../config/database";
 import { AppError, sendError } from "../utils/errors";
 import { comparePassword, hashPassword } from "../utils/password";
 import { formatUserProfile, userProfileSelect } from "../utils/user-profile";
+import { deleteUserWithData } from "../services/user-deletion.service";
 
 class UserController {
   async getMe(req: Request, res: Response): Promise<void> {
@@ -140,7 +141,7 @@ class UserController {
 
   async deleteMe(req: Request, res: Response): Promise<void> {
     try {
-      await prisma.user.delete({ where: { id: req.user!.userId } });
+      await deleteUserWithData(req.user!.userId);
 
       res.json({
         success: true,
