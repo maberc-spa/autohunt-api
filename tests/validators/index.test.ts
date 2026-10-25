@@ -79,10 +79,31 @@ describe("validators", () => {
       expect(result.success).toBe(false);
     });
 
-    it("strips password and email", () => {
+    it("accepts username, email and current password", () => {
       const result = updateUserSchema.safeParse({
-        email: "x@example.com",
+        username: "juan_p",
+        email: " juan@example.com ",
+        currentPassword: "secret",
+      });
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        username: "juan_p",
+        email: "juan@example.com",
+        currentPassword: "secret",
+      });
+    });
+
+    it("rejects invalid username and email", () => {
+      expect(updateUserSchema.safeParse({ username: "a b" }).success).toBe(false);
+      expect(updateUserSchema.safeParse({ username: "ab" }).success).toBe(false);
+      expect(updateUserSchema.safeParse({ email: "not-an-email" }).success).toBe(false);
+    });
+
+    it("strips password, role and plan", () => {
+      const result = updateUserSchema.safeParse({
         password: "password123",
+        role: "ADMIN",
+        plan: "PREMIUM_TIER_3",
       });
       expect(result.success).toBe(true);
       expect(result.data).toEqual({});

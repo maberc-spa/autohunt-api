@@ -25,15 +25,55 @@ class UserController {
   async updateMe(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user!.userId;
-      const { firstName, lastName, phone, countryId } = req.body;
+      const {
+        username,
+        email,
+        currentPassword,
+        firstName,
+        lastName,
+        phone,
+        countryId,
+      } = req.body;
 
       const current = await prisma.user.findUnique({
         where: { id: userId },
-        select: { firstName: true, lastName: true },
+        select: {
+          username: true,
+          email: true,
+          password: true,
+          firstName: true,
+          lastName: true,
+        },
       });
 
       if (!current) {
         throw new AppError(404, "Usuario no encontrado");
+      }
+
+      const emailChanged = email !== undefined && email !== current.email;
+      const usernameChanged =
+        username !== undefined && username !== current.username;
+
+      // The email is the login identifier and the 2FA channel, so changing it
+      // requires the current password (social-only accounts have none).
+      if (emailChanged && current.password) {
+        if (
+          !currentPassword ||
+          !(await comparePassword(currentPassword, current.password))
+        ) {
+          throw new AppError(400, "La contraseña actual es incorrecta");
+        }
+      }
+
+      if (emailChanged && (await prisma.user.findUnique({ where: { email } }))) {
+        throw new AppError(409, "Ese correo ya está en uso");
+      }
+
+      if (
+        usernameChanged &&
+        (await prisma.user.findUnique({ where: { username } }))
+      ) {
+        throw new AppError(409, "Ese nombre de usuario ya está en uso");
       }
 
       const nextFirstName = firstName ?? current.firstName;
@@ -45,6 +85,8 @@ class UserController {
           firstName: nextFirstName,
           lastName: nextLastName,
           name: `${nextFirstName} ${nextLastName}`.trim(),
+          ...(usernameChanged ? { username } : {}),
+          ...(emailChanged ? { email } : {}),
           ...(phone !== undefined ? { phone: phone || null } : {}),
           ...(countryId !== undefined ? { countryId } : {}),
         },
