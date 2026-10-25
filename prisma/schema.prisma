@@ -22,6 +22,11 @@ enum UserPlan {
   PREMIUM_TIER_3
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 enum OAuthProvider {
   GOOGLE
   APPLE
@@ -111,6 +116,7 @@ model User {
   password           String?
   countryId          Int?           @map("country_id")
   emailVerified      Boolean        @default(false) @map("email_verified")
+  role               UserRole       @default(USER)
   plan               UserPlan       @default(FREE)
   planVehicleLimit   Int?           @map("plan_vehicle_limit")
   twoFactorEnabled   Boolean        @default(false) @map("two_factor_enabled")

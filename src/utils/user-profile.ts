@@ -12,6 +12,7 @@ export const userProfileSelect = {
   password: true,
   countryId: true,
   emailVerified: true,
+  role: true,
   plan: true,
   planVehicleLimit: true,
   twoFactorEnabled: true,

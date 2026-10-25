@@ -4,6 +4,7 @@ import { Server } from "http";
 import app from "./app";
 import { connectDatabase, disconnectDatabase } from "./config/database";
 import { validateEnv } from "./config/env";
+import { ensureAdminUser } from "./services/admin-bootstrap.service";
 
 dotenv.config();
 validateEnv();
@@ -26,6 +27,7 @@ const startServer = async () => {
   try {
     runMigrations();
     await connectDatabase();
+    await ensureAdminUser();
 
     // Iniciar el servidor
     server = app.listen(PORT, () => {
