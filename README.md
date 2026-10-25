@@ -59,6 +59,19 @@ Incluye el token en rutas protegidas: `Authorization: Bearer <token>`
 | User maintenances | `/user-maintenances` |
 | Maintenance details | `/maintenance-details` |
 
+`PUT /users/me` acepta `username`, `email`, `firstName`, `lastName`, `phone` y `countryId`. Para cambiar el `email` de una cuenta con contraseña hay que enviar también `currentPassword`. `role` y `plan` no se pueden modificar desde aquí.
+
+### Administración (token de un usuario con rol `ADMIN`)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/admin/stats` | Totales (usuarios, vehículos, mantenimientos, documentos, almacenamiento, gasto), altas de los últimos 30 días, usuarios por plan, vehículos por combustible, top 5 marcas y series diarias de 14 días |
+| GET | `/admin/users?search=&page=1&pageSize=20&sort=recent\|vehicles` | Listado paginado con búsqueda por username, email o nombre |
+| GET | `/admin/users/:id` | Perfil, estadísticas y vehículos del usuario |
+| DELETE | `/admin/users/:id` | Elimina al usuario con todos sus vehículos, mantenimientos y documentos (incluidos los archivos). No permite borrarse a sí mismo ni a otro admin |
+
+El primer administrador se configura con `ADMIN_EMAIL` y `ADMIN_PASSWORD` (ver `.env.example`): al arrancar, la API promueve esa cuenta a `ADMIN` o la crea si no existe.
+
 ### Health (público)
 
 `/health`, `/health/ready`, `/health/live`

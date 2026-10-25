@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { z, ZodSchema } from "zod";
 import { AppError } from "../utils/errors";
 
-type ValidationTarget = "body" | "params";
+type ValidationTarget = "body" | "params" | "query";
 
 export const validate =
   (schema: ZodSchema, target: ValidationTarget = "body") =>
