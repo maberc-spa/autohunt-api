@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -19,6 +20,11 @@ enum UserPlan {
   PREMIUM_TIER_1
   PREMIUM_TIER_2
   PREMIUM_TIER_3
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
 
 enum OAuthProvider {
@@ -106,9 +112,11 @@ model User {
   lastName           String         @map("last_name")
   name               String
   email              String         @unique
+  phone              String?
   password           String?
   countryId          Int?           @map("country_id")
   emailVerified      Boolean        @default(false) @map("email_verified")
+  role               UserRole       @default(USER)
   plan               UserPlan       @default(FREE)
   planVehicleLimit   Int?           @map("plan_vehicle_limit")
   twoFactorEnabled   Boolean        @default(false) @map("two_factor_enabled")

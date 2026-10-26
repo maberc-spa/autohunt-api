@@ -8,6 +8,9 @@ import { errorHandler } from "./middleware/error-handler";
 
 const app: Application = express();
 
+// Render (and most PaaS) terminate TLS at a proxy; trust it so req.protocol is https.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(cors());
 app.use(

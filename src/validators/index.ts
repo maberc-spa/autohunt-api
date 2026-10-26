@@ -2,6 +2,12 @@ import { z } from "zod";
 
 const optionalInt = z.coerce.number().int().positive().optional().nullable();
 
+const usernameSchema = z
+  .string()
+  .min(3)
+  .max(30)
+  .regex(/^[a-zA-Z0-9_]+$/);
+
 export const createCountrySchema = z.object({
   name: z.string().min(1).max(100),
   code: z.string().min(2).max(3),
@@ -32,11 +38,7 @@ export const createVehicleTypeSchema = z.object({
 export const updateVehicleTypeSchema = createVehicleTypeSchema.partial();
 
 export const registerSchema = z.object({
-  username: z
-    .string()
-    .min(3)
-    .max(30)
-    .regex(/^[a-zA-Z0-9_]+$/),
+  username: usernameSchema,
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
   email: z.string().email(),
@@ -103,10 +105,25 @@ export const updateDocumentSchema = z.object({
 export const createUserSchema = registerSchema;
 
 export const updateUserSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  email: z.string().email().optional(),
-  password: z.string().min(8).max(128).optional(),
+  username: usernameSchema.optional(),
+  email: z.string().trim().email().optional(),
+  // Required to change the email of an account that has a password.
+  currentPassword: z.string().min(1).max(128).optional(),
+  firstName: z.string().trim().min(1).max(50).optional(),
+  lastName: z.string().trim().min(1).max(50).optional(),
+  phone: z
+    .union([
+      z.string().trim().regex(/^\+?[0-9][0-9\s-]{6,19}$/),
+      z.literal(""),
+    ])
+    .optional()
+    .nullable(),
   countryId: optionalInt,
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128).optional(),
+  newPassword: z.string().min(8).max(128),
 });
 
 export const createVehicleSchema = z.object({
@@ -160,3 +177,10 @@ export const createMaintenanceDetailSchema = z.object({
 });
 
 export const updateMaintenanceDetailSchema = createMaintenanceDetailSchema.partial();
+
+export const adminUserListQuerySchema = z.object({
+  search: z.string().trim().max(100).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  sort: z.enum(["recent", "vehicles"]).default("recent"),
+});

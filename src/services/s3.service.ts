@@ -27,13 +27,20 @@ export type PresignResult = {
   downloadUrl: string;
 };
 
+/** API_PUBLIC_URL if set, otherwise the origin of the incoming request. */
+export const resolvePublicBaseUrl = (requestOrigin: string): string =>
+  (process.env.API_PUBLIC_URL?.trim() || requestOrigin).replace(/\/$/, "");
+
+export const buildFileUrl = (baseUrl: string, fileKey: string): string =>
+  `${baseUrl}/api/uploads/${fileKey}`;
+
 export const createPresignedUpload = (
   documentId: number,
-  fileKey: string
+  fileKey: string,
+  baseUrl: string
 ): PresignResult => {
-  const baseUrl = process.env.API_PUBLIC_URL?.replace(/\/$/, "") ?? "";
-  const uploadUrl = `${baseUrl}/api/uploads/${fileKey}`;
-  const downloadUrl = `${baseUrl}/api/uploads/${fileKey}`;
+  const uploadUrl = buildFileUrl(baseUrl, fileKey);
+  const downloadUrl = buildFileUrl(baseUrl, fileKey);
 
   return { documentId, fileKey, uploadUrl, downloadUrl };
 };
