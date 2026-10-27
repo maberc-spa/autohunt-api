@@ -30,3 +30,10 @@ export const authLimiter = createLimiter(
   Number(process.env.RATE_LIMIT_AUTH_WINDOW_MS) || 15 * 60 * 1000,
   Number(process.env.RATE_LIMIT_AUTH_MAX) || 10
 );
+
+/** Decodificación de VIN — protege la cuota del servicio externo (NHTSA) */
+export const vinDecodeLimiter = createLimiter(
+  "Demasiadas consultas de VIN. Intenta de nuevo en unos minutos.",
+  Number(process.env.RATE_LIMIT_VIN_WINDOW_MS) || 15 * 60 * 1000,
+  Number(process.env.RATE_LIMIT_VIN_MAX) || 30
+);

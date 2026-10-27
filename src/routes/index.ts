@@ -16,6 +16,7 @@ import maintenanceRoutes from "./maintenance.routes";
 import userMaintenanceRoutes from "./user-maintenance.routes";
 import maintenanceDetailRoutes from "./maintenance-detail.routes";
 import adminRoutes from "./admin.routes";
+import vinRoutes from "./vin.routes";
 
 const router = Router();
 
@@ -36,5 +37,6 @@ router.use("/maintenances", maintenanceRoutes);
 router.use("/user-maintenances", userMaintenanceRoutes);
 router.use("/maintenance-details", maintenanceDetailRoutes);
 router.use("/admin", adminRoutes);
+router.use("/vin", vinRoutes);
 
 export default router;

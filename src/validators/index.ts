@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  VIN_ISSUE_MESSAGES,
+  VIN_LENGTH,
+  normalizeVin,
+  validateVin,
+} from "../utils/vin";
 
 const optionalInt = z.coerce.number().int().positive().optional().nullable();
 
@@ -126,6 +132,27 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(8).max(128),
 });
 
+/**
+ * Normalizes before validating, so the stored VIN is always canonical.
+ * [fullLength] rejects legacy (pre-1981) VINs, which can't be decoded.
+ */
+const vinField = (fullLength: boolean) =>
+  z
+    .string()
+    .max(40)
+    .transform(normalizeVin)
+    .superRefine((vin, ctx) => {
+      const issue =
+        fullLength && vin.length !== VIN_LENGTH ? "length" : validateVin(vin);
+      if (issue) {
+        ctx.addIssue({ code: "custom", message: VIN_ISSUE_MESSAGES[issue] });
+      }
+    });
+
+export const vinSchema = vinField(false);
+
+export const vinDecodeParamsSchema = z.object({ vin: vinField(true) });
+
 export const createVehicleSchema = z.object({
   name: z.string().min(1).max(100),
   brandId: z.coerce.number().int().positive(),
@@ -135,7 +162,7 @@ export const createVehicleSchema = z.object({
   fuelTypeId: z.coerce.number().int().positive(),
   cylinder: z.coerce.number().positive().max(20).optional().nullable(),
   year: z.coerce.number().int().min(1886).max(2100).optional().nullable(),
-  vin: z.string().min(11).max(17).optional().nullable(),
+  vin: vinSchema.optional().nullable(),
   licensePlate: z.string().min(1).max(20).optional().nullable(),
   mileage: z.coerce.number().int().min(0).optional(),
 });
