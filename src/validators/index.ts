@@ -211,3 +211,17 @@ export const adminUserListQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   sort: z.enum(["recent", "vehicles"]).default("recent"),
 });
+
+/** "No encuentro mi auto". userRef is added by the API from the session. */
+export const catalogSubmissionSchema = z
+  .object({
+    brand: z.string().trim().min(1).max(80),
+    model: z.string().trim().min(1).max(120),
+    year: z.coerce
+      .number()
+      .int()
+      .min(1950)
+      .refine((year) => year <= new Date().getFullYear() + 1, "Año fuera de rango"),
+    variant: z.string().trim().max(200).optional(),
+  })
+  .strict();

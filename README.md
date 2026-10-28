@@ -82,8 +82,26 @@ El `vin` de un vehículo se normaliza (mayúsculas, sin espacios ni guiones) y s
 | GET | `/admin/users?search=&page=1&pageSize=20&sort=recent\|vehicles` | Listado paginado con búsqueda por username, email o nombre |
 | GET | `/admin/users/:id` | Perfil, estadísticas y vehículos del usuario |
 | DELETE | `/admin/users/:id` | Elimina al usuario con todos sus vehículos, mantenimientos y documentos (incluidos los archivos). No permite borrarse a sí mismo ni a otro admin |
+| * | `/admin/catalog/*` | Proxy a la API admin del catálogo de vehículos (`/admin/*` de auto-db-api): cola de revisión, ingestas, jobs. El email del admin queda como `resolved_by` |
 
 El primer administrador se configura con `ADMIN_EMAIL` y `ADMIN_PASSWORD` (ver `.env.example`): al arrancar, la API promueve esa cuenta a `ADMIN` o la crea si no existe.
+
+### Catálogo de vehículos (`/catalog`, servido por auto-db-api)
+
+autohunt-api es la puerta de entrada al catálogo canónico ([auto-db-api](https://auto-db-api.maberc.com)): la app nunca lo llama directo. autohunt reenvía a `/v1` con `CATALOG_API_KEY` y cachea en memoria según el `Cache-Control` del catálogo. Las respuestas mantienen el formato del catálogo (`data`, `nextCursor`) más `success`.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/catalog/brands?limit=&cursor=` | Marcas (público) |
+| GET | `/catalog/brands/:brandId/models` | Modelos de la marca (público) |
+| GET | `/catalog/models/:modelId/years` | Años disponibles (público) |
+| GET | `/catalog/models/:modelId/variants?year=` | Variantes de ese año (público) |
+| GET | `/catalog/variants/:id` | Detalle de una variante (público) |
+| GET | `/catalog/search?q=` | Typeahead de marcas y modelos (público) |
+| GET | `/catalog/enums` | Combustibles, carrocerías, tracciones y transmisiones (público) |
+| POST | `/catalog/submissions` | "No encuentro mi auto" (`brand`, `model`, `year`, `variant?`). Requiere token; el usuario se identifica desde la sesión. Rate limit por usuario |
+
+Si el catálogo no responde: `503`; si responde con error o rechaza la clave: `502`.
 
 ### Health (público)
 
