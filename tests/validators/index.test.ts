@@ -8,6 +8,7 @@ import {
   loginSchema,
   updateUserSchema,
   changePasswordSchema,
+  vinDecodeParamsSchema,
 } from "../../src/validators";
 
 describe("validators", () => {
@@ -197,6 +198,52 @@ describe("validators", () => {
         password: "secret",
       });
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe("vehicle vin", () => {
+    const vehicle = {
+      name: "Auto",
+      brandId: 1,
+      modelId: 1,
+      vehicleTypeId: 1,
+      countryId: 1,
+      fuelTypeId: 1,
+    };
+
+    it("normalizes the VIN before storing it", () => {
+      const result = createVehicleSchema.safeParse({
+        ...vehicle,
+        vin: " 1hgcm82633-a004352 ",
+      });
+      expect(result.success).toBe(true);
+      expect(result.data?.vin).toBe("1HGCM82633A004352");
+    });
+
+    it("rejects an invalid check digit", () => {
+      const result = createVehicleSchema.safeParse({
+        ...vehicle,
+        vin: "1HGCM82643A004352",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("still accepts a null VIN", () => {
+      const result = createVehicleSchema.safeParse({ ...vehicle, vin: null });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("vinDecodeParamsSchema", () => {
+    it("accepts a full VIN", () => {
+      const result = vinDecodeParamsSchema.safeParse({ vin: "9bwzzz377vt004251" });
+      expect(result.data?.vin).toBe("9BWZZZ377VT004251");
+    });
+
+    it("rejects legacy VINs, which can't be decoded", () => {
+      const result = vinDecodeParamsSchema.safeParse({ vin: "ABC12345678" });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toHaveLength(1);
     });
   });
 });

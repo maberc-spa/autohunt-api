@@ -58,8 +58,21 @@ Incluye el token en rutas protegidas: `Authorization: Bearer <token>`
 | Mantenimientos | `/maintenances` |
 | User maintenances | `/user-maintenances` |
 | Maintenance details | `/maintenance-details` |
+| Decodificar VIN | `GET /vin/:vin` |
 
 `PUT /users/me` acepta `username`, `email`, `firstName`, `lastName`, `phone` y `countryId`. Para cambiar el `email` de una cuenta con contraseña hay que enviar también `currentPassword`. `role` y `plan` no se pueden modificar desde aquí.
+
+El `vin` de un vehículo se normaliza (mayúsculas, sin espacios ni guiones) y se valida: 17 caracteres sin I, O ni Q, con dígito verificador obligatorio para VINs norteamericanos (WMI `1`–`5`). Se aceptan VINs antiguos de 11 a 16 caracteres (anteriores a 1981).
+
+`GET /vin/:vin` identifica el vehículo a partir de un VIN de 17 caracteres. Consulta [NHTSA vPIC](https://vpic.nhtsa.dot.gov/api/) (cobertura completa para vehículos del mercado norteamericano) y, si no responde o no conoce el VIN, devuelve lo que se puede deducir del propio VIN: marca (WMI), país de fabricación y año modelo. Respuesta:
+
+```json
+{ "vin": "…", "make": "Toyota", "model": "Corolla", "year": 2019,
+  "countryCode": "JPN", "displacementL": 1.8, "fuelType": "gasoline",
+  "bodyType": "sedan", "source": "nhtsa" }
+```
+
+`fuelType` (`gasoline`, `diesel`, `electric`, `hybrid`, `lpg`, `cng`) y `bodyType` (`sedan`, `hatchback`, `suv`, `crossover`, `pickup`, `coupe`, `convertible`, `wagon`, `minivan`, `van`, `truck`, `bus`, `motorcycle`) son claves independientes del catálogo. Los resultados se guardan en caché 24 h y el endpoint tiene su propio rate limit (`RATE_LIMIT_VIN_*`).
 
 ### Administración (token de un usuario con rol `ADMIN`)
 
