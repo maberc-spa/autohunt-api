@@ -3,6 +3,7 @@ import {
   createCountrySchema,
   createUserSchema,
   createVehicleSchema,
+  updateVehicleSchema,
   createMaintenanceSchema,
   createUserMaintenanceSchema,
   loginSchema,
@@ -155,6 +156,35 @@ describe("validators", () => {
         year: 1800,
       });
       expect(result.success).toBe(false);
+    });
+
+    const base = { name: "Auto", vehicleTypeId: 1, countryId: 1, fuelTypeId: 1 };
+
+    it("accepts brand and model by name (catalog pick or free text)", () => {
+      const result = createVehicleSchema.safeParse({
+        ...base,
+        brandName: " Toyota ",
+        modelName: "RAV4",
+      });
+      expect(result.success).toBe(true);
+      expect(result.data?.brandName).toBe("Toyota");
+    });
+
+    it("requires brand and model, by id or by name, without mixing them", () => {
+      expect(createVehicleSchema.safeParse(base).success).toBe(false);
+      expect(createVehicleSchema.safeParse({ ...base, brandName: "Toyota" }).success).toBe(false);
+      expect(
+        createVehicleSchema.safeParse({ ...base, brandId: 1, modelId: 1, modelName: "RAV4" })
+          .success
+      ).toBe(false);
+    });
+
+    it("updates may leave brand and model alone, but names still go in pairs", () => {
+      expect(updateVehicleSchema.safeParse({ mileage: 1000 }).success).toBe(true);
+      expect(updateVehicleSchema.safeParse({ modelName: "RAV4" }).success).toBe(false);
+      expect(
+        updateVehicleSchema.safeParse({ brandName: "Toyota", modelName: "RAV4" }).success
+      ).toBe(true);
     });
   });
 
