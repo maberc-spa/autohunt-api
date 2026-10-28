@@ -153,10 +153,16 @@ export const vinSchema = vinField(false);
 
 export const vinDecodeParamsSchema = z.object({ vin: vinField(true) });
 
-export const createVehicleSchema = z.object({
+const vehicleFields = z.object({
   name: z.string().min(1).max(100),
   brandId: z.coerce.number().int().positive(),
   modelId: z.coerce.number().int().positive(),
+  /**
+   * Brand and model picked from the vehicle catalog (or typed by hand when it isn't there),
+   * instead of brandId/modelId: the API resolves them to our own rows, creating them if needed.
+   */
+  brandName: z.string().trim().min(1).max(100),
+  modelName: z.string().trim().min(1).max(100),
   vehicleTypeId: z.coerce.number().int().positive(),
   countryId: z.coerce.number().int().positive(),
   fuelTypeId: z.coerce.number().int().positive(),
@@ -167,7 +173,40 @@ export const createVehicleSchema = z.object({
   mileage: z.coerce.number().int().min(0).optional(),
 });
 
-export const updateVehicleSchema = createVehicleSchema.partial();
+type VehicleRefs = {
+  brandId?: number;
+  modelId?: number;
+  brandName?: string;
+  modelName?: string;
+};
+
+/** Brand and model come either as ids or as names, never mixed; on create one pair is required. */
+const refineVehicleRefs =
+  (required: boolean) =>
+  (data: VehicleRefs, ctx: z.RefinementCtx): void => {
+    const byId = data.brandId !== undefined || data.modelId !== undefined;
+    const byName = data.brandName !== undefined || data.modelName !== undefined;
+    const issue = (path: string, message: string) =>
+      ctx.addIssue({ code: "custom", path: [path], message });
+
+    if (byId && byName) {
+      issue("brandName", "Envía brandId/modelId o brandName/modelName, no ambos");
+    } else if (byName) {
+      if (data.brandName === undefined) issue("brandName", "Requerido junto a modelName");
+      if (data.modelName === undefined) issue("modelName", "Requerido junto a brandName");
+    } else if (byId) {
+      if (data.modelId === undefined) issue("modelId", "Requerido junto a brandId");
+      if (required && data.brandId === undefined) issue("brandId", "Requerido");
+    } else if (required) {
+      issue("brandId", "Indica la marca y el modelo (por id o por nombre)");
+    }
+  };
+
+export const createVehicleSchema = vehicleFields
+  .partial({ brandId: true, modelId: true, brandName: true, modelName: true })
+  .superRefine(refineVehicleRefs(true));
+
+export const updateVehicleSchema = vehicleFields.partial().superRefine(refineVehicleRefs(false));
 
 export const createMaintenanceTypeSchema = z.object({
   name: z.string().min(1).max(100),

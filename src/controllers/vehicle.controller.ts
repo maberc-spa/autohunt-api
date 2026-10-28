@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../config/database";
 import { parseIdParam, sendError } from "../utils/errors";
 import { getOwnedVehicle } from "../utils/ownership";
 import { getMaxVehiclesForPlan } from "../services/plan-limits";
 import { AppError } from "../utils/errors";
+import { resolveBrandAndModel } from "../services/vehicle-refs.service";
 
 const vehicleInclude = {
   brand: { select: { id: true, name: true } },
@@ -12,6 +14,18 @@ const vehicleInclude = {
   country: { select: { id: true, name: true } },
   fuelType: { select: { id: true, name: true } },
 } as const;
+
+/** Replaces `brandName`/`modelName` (catalog pick or free text) with our brand/model ids. */
+const withBrandAndModelIds = async (
+  body: Record<string, unknown>,
+  fallbackCountryId?: number
+): Promise<Record<string, unknown>> => {
+  const { brandName, modelName, ...data } = body;
+  if (typeof brandName !== "string" || typeof modelName !== "string") return data;
+  const countryId = (data.countryId as number | undefined) ?? fallbackCountryId;
+  if (countryId === undefined) throw new AppError(400, "Indica el país del vehículo");
+  return { ...data, ...(await resolveBrandAndModel({ brandName, modelName, countryId })) };
+};
 
 class VehicleController {
   async getAll(req: Request, res: Response): Promise<void> {
@@ -66,8 +80,9 @@ class VehicleController {
         );
       }
 
+      const body = await withBrandAndModelIds(req.body);
       const data = await prisma.vehicle.create({
-        data: { ...req.body, userId: req.user!.userId },
+        data: { ...body, userId: req.user!.userId } as Prisma.VehicleUncheckedCreateInput,
         include: vehicleInclude,
       });
 
@@ -84,9 +99,12 @@ class VehicleController {
   async update(req: Request, res: Response): Promise<void> {
     try {
       const id = parseIdParam(req.params.id);
-      await getOwnedVehicle(id, req.user!.userId);
+      const vehicle = await getOwnedVehicle(id, req.user!.userId);
 
-      const { userId: _userId, ...data } = req.body;
+      const { userId: _userId, ...data } = await withBrandAndModelIds(
+        req.body,
+        vehicle.countryId
+      );
       const result = await prisma.vehicle.update({
         where: { id },
         data,

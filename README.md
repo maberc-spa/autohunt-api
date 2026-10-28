@@ -106,6 +106,8 @@ Si el catálogo no responde: `503`; si responde con error o rechaza la clave: `5
 
 **Formulario "agregar vehículo":** la app pide primero el tipo de vehículo (`GET /catalog/vehicle-types`) y pasa ese `vehicleTypeId` a marcas, modelos y búsqueda, para no mostrar el catálogo completo. Un tipo con `modelCount: 0` (o sin `bodyType`) no tiene modelos en el catálogo: la app debe ir directo a texto libre y `POST /catalog/submissions` con el `vehicleTypeId`, que se guarda como categoría del modelo al aprobarlo. Un `vehicleTypeId` inexistente da `404`; uno sin categoría en el catálogo, `400`. SUV y Crossover se muestran juntos (el catálogo sigue la división de la EPA, que deja RAV4, CR-V o Tucson como crossover). El mismo id se guarda en `vehicle.vehicleTypeId`.
 
+**Guardar el vehículo:** los ids de marca y modelo del catálogo no son los nuestros. `POST /vehicles` y `PUT /vehicles/:id` aceptan `brandName` y `modelName` (los nombres elegidos en el catálogo o escritos a mano) en lugar de `brandId` y `modelId`: la API reutiliza la marca y el modelo propios con ese nombre (sin distinguir mayúsculas) o los crea. Una marca nueva queda con el `countryId` del vehículo. No se pueden mezclar ids y nombres en la misma petición.
+
 ### Health (público)
 
 `/health`, `/health/ready`, `/health/live`
