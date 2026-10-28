@@ -1,5 +1,6 @@
 import { Router } from "express";
 import adminController from "../controllers/admin.controller";
+import catalogController from "../controllers/catalog.controller";
 import { authenticate } from "../middleware/auth";
 import { requireAdmin } from "../middleware/require-admin";
 import { validate } from "../middleware/validate-request";
@@ -17,5 +18,8 @@ router.get(
 );
 router.get("/users/:id", adminController.getUser.bind(adminController));
 router.delete("/users/:id", adminController.deleteUser.bind(adminController));
+
+// Vehicle catalog administration (review queue, ingestion runs, jobs) → auto-db-api /admin
+router.use("/catalog", catalogController.adminProxy.bind(catalogController));
 
 export default router;
