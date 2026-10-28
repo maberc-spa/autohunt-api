@@ -92,16 +92,19 @@ autohunt-api es la puerta de entrada al catálogo canónico ([auto-db-api](https
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/catalog/brands?limit=&cursor=` | Marcas (público) |
-| GET | `/catalog/brands/:brandId/models` | Modelos de la marca (público) |
+| GET | `/catalog/vehicle-types` | Tipos de vehículo (`vehicle_type`) con su categoría en el catálogo (`bodyType`) y cuántos modelos tiene cada uno (`modelCount`) (público) |
+| GET | `/catalog/brands?limit=&cursor=&vehicleTypeId=` | Marcas; con `vehicleTypeId`, solo las que tienen modelos de ese tipo (público) |
+| GET | `/catalog/brands/:brandId/models?vehicleTypeId=` | Modelos de la marca, opcionalmente filtrados por tipo (público) |
 | GET | `/catalog/models/:modelId/years` | Años disponibles (público) |
 | GET | `/catalog/models/:modelId/variants?year=` | Variantes de ese año (público) |
 | GET | `/catalog/variants/:id` | Detalle de una variante (público) |
-| GET | `/catalog/search?q=` | Typeahead de marcas y modelos (público) |
+| GET | `/catalog/search?q=&vehicleTypeId=` | Typeahead de marcas y modelos, opcionalmente filtrado por tipo (público) |
 | GET | `/catalog/enums` | Combustibles, carrocerías, tracciones y transmisiones (público) |
-| POST | `/catalog/submissions` | "No encuentro mi auto" (`brand`, `model`, `year`, `variant?`). Requiere token; el usuario se identifica desde la sesión. Rate limit por usuario |
+| POST | `/catalog/submissions` | "No encuentro mi auto" (`brand`, `model`, `year`, `variant?`, `vehicleTypeId?`). Requiere token; el usuario se identifica desde la sesión. Rate limit por usuario |
 
 Si el catálogo no responde: `503`; si responde con error o rechaza la clave: `502`.
+
+**Formulario "agregar vehículo":** la app pide primero el tipo de vehículo (`GET /catalog/vehicle-types`) y pasa ese `vehicleTypeId` a marcas, modelos y búsqueda, para no mostrar el catálogo completo. Un tipo con `modelCount: 0` (o sin `bodyType`) no tiene modelos en el catálogo: la app debe ir directo a texto libre y `POST /catalog/submissions` con el `vehicleTypeId`, que se guarda como categoría del modelo al aprobarlo. Un `vehicleTypeId` inexistente da `404`; uno sin categoría en el catálogo, `400`. SUV y Crossover se muestran juntos (el catálogo sigue la división de la EPA, que deja RAV4, CR-V o Tucson como crossover). El mismo id se guarda en `vehicle.vehicleTypeId`.
 
 ### Health (público)
 

@@ -10,11 +10,16 @@ import { catalogSubmissionSchema } from "../validators";
 
 /**
  * Vehicle catalog (auto-db-api) behind autohunt-api. Reads are public, like
- * the other catalogs, so the app can fill the Brand → Model → Year → Variant
- * dropdowns; reporting a missing car requires a session.
+ * the other catalogs, so the app can fill the Vehicle type → Brand → Model → Year →
+ * Variant dropdowns; reporting a missing car requires a session.
  */
 const router = Router();
 
+router.get(
+  "/vehicle-types",
+  catalogReadLimiter,
+  catalogController.listVehicleTypes.bind(catalogController)
+);
 router.get("/brands", catalogReadLimiter, catalogController.listBrands.bind(catalogController));
 router.get(
   "/brands/:brandId/models",

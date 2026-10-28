@@ -223,5 +223,6 @@ export const catalogSubmissionSchema = z
       .min(1950)
       .refine((year) => year <= new Date().getFullYear() + 1, "Año fuera de rango"),
     variant: z.string().trim().max(200).optional(),
+    vehicleTypeId: z.coerce.number().int().positive().optional(),
   })
   .strict();
