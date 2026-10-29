@@ -164,7 +164,11 @@ const vehicleFields = z.object({
   brandName: z.string().trim().min(1).max(100),
   modelName: z.string().trim().min(1).max(100),
   vehicleTypeId: z.coerce.number().int().positive(),
-  countryId: z.coerce.number().int().positive(),
+  /**
+   * A vehicle comes from its brand's country, so this is only the origin of a brand we don't have
+   * yet (one typed by hand, or a catalog brand new to us).
+   */
+  countryId: z.coerce.number().int().positive().optional(),
   fuelTypeId: z.coerce.number().int().positive(),
   cylinder: z.coerce.number().positive().max(20).optional().nullable(),
   year: z.coerce.number().int().min(1886).max(2100).optional().nullable(),

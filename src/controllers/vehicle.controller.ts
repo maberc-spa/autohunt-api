@@ -15,16 +15,35 @@ const vehicleInclude = {
   fuelType: { select: { id: true, name: true } },
 } as const;
 
-/** Replaces `brandName`/`modelName` (catalog pick or free text) with our brand/model ids. */
+/**
+ * Replaces `brandName`/`modelName` (catalog pick or free text) with our brand/model ids. A vehicle
+ * comes from its brand's country, so `countryId` (or [fallbackCountryId]) is only used to create a
+ * brand we don't have yet.
+ */
 const withBrandAndModelIds = async (
   body: Record<string, unknown>,
-  fallbackCountryId?: number
+  fallbackCountryId?: number | null
 ): Promise<Record<string, unknown>> => {
-  const { brandName, modelName, ...data } = body;
-  if (typeof brandName !== "string" || typeof modelName !== "string") return data;
-  const countryId = (data.countryId as number | undefined) ?? fallbackCountryId;
-  if (countryId === undefined) throw new AppError(400, "Indica el país del vehículo");
-  return { ...data, ...(await resolveBrandAndModel({ brandName, modelName, countryId })) };
+  const { brandName, modelName, countryId, ...data } = body;
+  if (typeof brandName === "string" && typeof modelName === "string") {
+    return {
+      ...data,
+      ...(await resolveBrandAndModel({
+        brandName,
+        modelName,
+        countryId: (countryId as number | undefined) ?? fallbackCountryId ?? undefined,
+      })),
+    };
+  }
+  if (typeof data.brandId === "number") {
+    const brand = await prisma.brand.findUnique({
+      where: { id: data.brandId },
+      select: { countryId: true },
+    });
+    if (!brand) throw new AppError(404, "Marca no encontrada");
+    return { ...data, countryId: brand.countryId };
+  }
+  return data;
 };
 
 class VehicleController {
@@ -80,7 +99,8 @@ class VehicleController {
         );
       }
 
-      const body = await withBrandAndModelIds(req.body);
+      // A brand typed by hand defaults to the user's country.
+      const body = await withBrandAndModelIds(req.body, user.countryId);
       const data = await prisma.vehicle.create({
         data: { ...body, userId: req.user!.userId } as Prisma.VehicleUncheckedCreateInput,
         include: vehicleInclude,
