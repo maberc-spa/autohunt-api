@@ -2,12 +2,14 @@ import { Router } from "express";
 import authController from "../controllers/auth.controller";
 import { validate } from "../middleware/validate-request";
 import { authenticate } from "../middleware/auth";
-import { authLimiter } from "../middleware/rate-limit";
+import { authLimiter, publicReadLimiter } from "../middleware/rate-limit";
 import {
+  checkUsernameParamsSchema,
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resendTwoFactorSchema,
-  socialLoginSchema,
+  resetPasswordSchema,
   verifyTwoFactorSchema,
 } from "../validators";
 
@@ -27,6 +29,8 @@ router.post(
 );
 router.get(
   "/check-username/:username",
+  publicReadLimiter,
+  validate(checkUsernameParamsSchema, "params"),
   authController.checkUsername.bind(authController)
 );
 router.post(
@@ -42,10 +46,16 @@ router.post(
   authController.resendTwoFactor.bind(authController)
 );
 router.post(
-  "/social",
+  "/forgot-password",
   authLimiter,
-  validate(socialLoginSchema),
-  authController.socialLogin.bind(authController)
+  validate(forgotPasswordSchema),
+  authController.forgotPassword.bind(authController)
+);
+router.post(
+  "/reset-password",
+  authLimiter,
+  validate(resetPasswordSchema),
+  authController.resetPassword.bind(authController)
 );
 router.get("/me", authenticate, authController.me.bind(authController));
 

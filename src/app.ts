@@ -2,7 +2,6 @@ import express, { Application } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import routes from "./routes";
-import uploadRoutes from "./routes/upload.routes";
 import { notFoundHandler } from "./middleware/not-found";
 import { errorHandler } from "./middleware/error-handler";
 
@@ -12,14 +11,15 @@ const app: Application = express();
 app.set("trust proxy", 1);
 
 app.use(helmet());
-app.use(cors());
-app.use(
-  "/api/uploads",
-  express.raw({ type: () => true, limit: "10mb" }),
-  uploadRoutes
-);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.disable("x-powered-by");
+// The mobile app doesn't need CORS; browsers only get it for the origins listed in CORS_ORIGINS.
+const corsOrigins = (process.env.CORS_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+app.use(cors({ origin: corsOrigins.length > 0 ? corsOrigins : false }));
+app.use(express.json({ limit: "100kb" }));
+app.use(express.urlencoded({ extended: false, limit: "100kb" }));
 
 app.use("/api", routes);
 app.use(notFoundHandler);

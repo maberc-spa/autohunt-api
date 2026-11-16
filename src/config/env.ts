@@ -39,7 +39,21 @@ export const validateEnv = (): void => {
     );
   }
 
-  if (!process.env.JWT_SECRET?.trim()) {
-    throw new Error("JWT_SECRET es requerida en producción");
+  const jwtSecret = process.env.JWT_SECRET?.trim();
+  if (!jwtSecret) {
+    throw new Error("JWT_SECRET es requerida");
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    if (jwtSecret.length < 32) {
+      throw new Error("JWT_SECRET debe tener al menos 32 caracteres (openssl rand -base64 32)");
+    }
+    // Not fatal, but these features are off until configured.
+    if (!process.env.MAILER_BASE_URL?.trim() || !process.env.MAILER_API_KEY?.trim()) {
+      console.warn("⚠️  MAILER_* no configurado: no se pueden enviar códigos de 2FA ni de recuperación");
+    }
+    if (!process.env.S3_BUCKET?.trim()) {
+      console.warn("⚠️  S3_* no configurado: los documentos están desactivados");
+    }
   }
 };

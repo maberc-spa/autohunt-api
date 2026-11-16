@@ -11,6 +11,9 @@ export class AppError extends Error {
   }
 }
 
+export const INTERNAL_ERROR_MESSAGE =
+  "Ocurrió un error inesperado. Intenta de nuevo en unos minutos.";
+
 export const parseIdParam = (raw: string, label = "ID"): number => {
   const id = parseInt(raw, 10);
   if (Number.isNaN(id) || id <= 0) {
@@ -27,15 +30,14 @@ export const mapPrismaError = (error: unknown): AppError => {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     switch (error.code) {
       case "P2002":
-        return new AppError(409, "Registro duplicado", error.meta);
+        return new AppError(409, "Ese registro ya existe");
       case "P2003":
-        return new AppError(400, "Referencia inválida", error.meta);
+        return new AppError(400, "Uno de los datos elegidos ya no existe. Recarga e intenta de nuevo.");
       case "P2025":
         return new AppError(404, "Registro no encontrado");
       default:
-        return new AppError(400, "Error de base de datos", {
-          code: error.code,
-        });
+        console.error(`Error de base de datos ${error.code}:`, error.message);
+        return new AppError(500, INTERNAL_ERROR_MESSAGE);
     }
   }
 
@@ -43,11 +45,9 @@ export const mapPrismaError = (error: unknown): AppError => {
     return new AppError(400, "Datos inválidos para la base de datos");
   }
 
-  if (error instanceof Error) {
-    return new AppError(500, error.message);
-  }
-
-  return new AppError(500, "Error desconocido");
+  // Unexpected: log it, but never send internals (stack, SQL, paths) to the client.
+  console.error("Error inesperado:", error);
+  return new AppError(500, INTERNAL_ERROR_MESSAGE);
 };
 
 export const sendError = (

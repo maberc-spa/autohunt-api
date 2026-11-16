@@ -7,11 +7,17 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
-  const appError = mapPrismaError(error);
-
-  if (process.env.NODE_ENV !== "production") {
-    console.error(error);
+  // Malformed JSON bodies and oversized payloads come from express itself.
+  const status = (error as { status?: number; type?: string })?.status;
+  if (status === 400 || status === 413) {
+    res.status(status).json({
+      success: false,
+      message: status === 413 ? "La solicitud es demasiado grande" : "Solicitud mal formada",
+    });
+    return;
   }
+
+  const appError = mapPrismaError(error);
 
   res.status(appError.statusCode).json({
     success: false,

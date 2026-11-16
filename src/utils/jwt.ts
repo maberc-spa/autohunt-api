@@ -1,5 +1,7 @@
 import jwt, { SignOptions } from "jsonwebtoken";
-import { AuthUser } from "../types/express";
+import { TokenPayload } from "../types/express";
+
+const ALGORITHM = "HS256";
 
 const getSecret = (): string => {
   const secret = process.env.JWT_SECRET;
@@ -9,15 +11,21 @@ const getSecret = (): string => {
   return secret;
 };
 
-const signOptions: SignOptions = {
-  expiresIn: (process.env.JWT_EXPIRES_IN ?? "7d") as SignOptions["expiresIn"],
-};
+const signOptions = (): SignOptions => ({
+  algorithm: ALGORITHM,
+  expiresIn: (process.env.JWT_EXPIRES_IN?.trim() || "30d") as SignOptions["expiresIn"],
+});
 
-export const signToken = (payload: AuthUser): string =>
-  jwt.sign(payload, getSecret(), signOptions);
+export const signToken = (payload: TokenPayload): string =>
+  jwt.sign(
+    { userId: payload.userId, email: payload.email, sv: payload.sessionVersion },
+    getSecret(),
+    signOptions()
+  );
 
-export const verifyToken = (token: string): AuthUser => {
-  const decoded = jwt.verify(token, getSecret());
+/** Tokens issued before session versions existed carry none: they count as version 0. */
+export const verifyToken = (token: string): TokenPayload => {
+  const decoded = jwt.verify(token, getSecret(), { algorithms: [ALGORITHM] });
 
   if (
     typeof decoded !== "object" ||
@@ -28,5 +36,9 @@ export const verifyToken = (token: string): AuthUser => {
     throw new Error("Token inválido");
   }
 
-  return { userId: decoded.userId, email: decoded.email };
+  return {
+    userId: decoded.userId,
+    email: decoded.email,
+    sessionVersion: typeof decoded.sv === "number" ? decoded.sv : 0,
+  };
 };

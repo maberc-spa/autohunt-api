@@ -3,12 +3,16 @@ import { UserPlan } from "@prisma/client";
 import { prisma } from "../config/database";
 import { AppError, sendError } from "../utils/errors";
 import { getPlanInfo, PLAN_CATALOG } from "../services/plan-limits";
-import { purchasePlan } from "../services/billing.service";
+import { isBillingEnabled, purchasePlan } from "../services/billing.service";
 
 class PlanController {
   async list(_req: Request, res: Response): Promise<void> {
     try {
-      res.json({ success: true, data: PLAN_CATALOG });
+      const purchasable = isBillingEnabled();
+      res.json({
+        success: true,
+        data: PLAN_CATALOG.map((plan) => ({ ...plan, purchasable })),
+      });
     } catch (error) {
       sendError(res, error);
     }
@@ -16,6 +20,11 @@ class PlanController {
 
   async upgrade(req: Request, res: Response): Promise<void> {
     try {
+      // There is no payment provider yet: never hand out paid plans for free.
+      if (!isBillingEnabled()) {
+        throw new AppError(403, "Los planes de pago estarán disponibles muy pronto.");
+      }
+
       const userId = req.user!.userId;
       const { plan, planVehicleLimit } = req.body as {
         plan: UserPlan;

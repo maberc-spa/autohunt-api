@@ -22,6 +22,12 @@ enum UserPlan {
   PREMIUM_TIER_3
 }
 
+/// What an emailed code unlocks.
+enum ChallengePurpose {
+  LOGIN
+  PASSWORD_RESET
+}
+
 enum UserRole {
   USER
   ADMIN
@@ -106,24 +112,26 @@ model FuelType {
 }
 
 model User {
-  id                 Int            @id @default(autoincrement())
-  username           String         @unique
-  firstName          String         @map("first_name")
-  lastName           String         @map("last_name")
-  name               String
-  email              String         @unique
-  phone              String?
-  password           String?
-  countryId          Int?           @map("country_id")
-  emailVerified      Boolean        @default(false) @map("email_verified")
-  role               UserRole       @default(USER)
-  plan               UserPlan       @default(FREE)
-  planVehicleLimit   Int?           @map("plan_vehicle_limit")
-  twoFactorEnabled   Boolean        @default(false) @map("two_factor_enabled")
-  oauthProvider      OAuthProvider? @map("oauth_provider")
-  oauthId            String?        @map("oauth_id")
-  createdAt          DateTime       @default(now()) @map("created_at")
-  updatedAt          DateTime       @updatedAt @map("updated_at")
+  id               Int            @id @default(autoincrement())
+  username         String         @unique
+  firstName        String         @map("first_name")
+  lastName         String         @map("last_name")
+  name             String
+  email            String         @unique
+  phone            String?
+  password         String?
+  countryId        Int?           @map("country_id")
+  emailVerified    Boolean        @default(false) @map("email_verified")
+  role             UserRole       @default(USER)
+  plan             UserPlan       @default(FREE)
+  planVehicleLimit Int?           @map("plan_vehicle_limit")
+  twoFactorEnabled Boolean        @default(false) @map("two_factor_enabled")
+  /// Bumped on password change/reset: tokens issued for an older version stop working.
+  sessionVersion   Int            @default(0) @map("session_version")
+  oauthProvider    OAuthProvider? @map("oauth_provider")
+  oauthId          String?        @map("oauth_id")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
 
   country             Country?             @relation(fields: [countryId], references: [id], onDelete: SetNull)
   vehicles            Vehicle[]
@@ -184,12 +192,16 @@ model VehicleDocument {
 }
 
 model TwoFactorChallenge {
-  id         String    @id @default(uuid())
-  userId     Int       @map("user_id")
+  id         String           @id @default(uuid())
+  userId     Int              @map("user_id")
+  /// SHA-256 of the code, never the code itself.
   code       String
-  expiresAt  DateTime  @map("expires_at")
-  consumedAt DateTime? @map("consumed_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
+  purpose    ChallengePurpose @default(LOGIN)
+  /// Wrong guesses so far; the challenge is burned after MAX_ATTEMPTS.
+  attempts   Int              @default(0)
+  expiresAt  DateTime         @map("expires_at")
+  consumedAt DateTime?        @map("consumed_at")
+  createdAt  DateTime         @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
