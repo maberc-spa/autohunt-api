@@ -14,6 +14,13 @@ router.put(
   documentController.update.bind(documentController)
 );
 
+router.get(
+  "/:id/download",
+  authenticate,
+  validate(idParamSchema, "params"),
+  documentController.download.bind(documentController)
+);
+
 router.delete(
   "/:id",
   authenticate,

@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import {
   AppError,
   mapPrismaError,
+  INTERNAL_ERROR_MESSAGE,
   parseIdParam,
   sendError,
 } from "../../src/utils/errors";
@@ -43,13 +44,14 @@ describe("mapPrismaError", () => {
   it("maps P2002 to 409", () => {
     const mapped = mapPrismaError(prismaError("P2002"));
     expect(mapped.statusCode).toBe(409);
-    expect(mapped.message).toBe("Registro duplicado");
+    expect(mapped.message).toBe("Ese registro ya existe");
+    expect(mapped.details).toBeUndefined();
   });
 
   it("maps P2003 to 400", () => {
     const mapped = mapPrismaError(prismaError("P2003"));
     expect(mapped.statusCode).toBe(400);
-    expect(mapped.message).toBe("Referencia inválida");
+    expect(mapped.details).toBeUndefined();
   });
 
   it("maps P2025 to 404", () => {
@@ -57,16 +59,17 @@ describe("mapPrismaError", () => {
     expect(mapped.statusCode).toBe(404);
   });
 
-  it("maps unknown Prisma codes to 400", () => {
+  it("maps unknown Prisma codes to a generic 500", () => {
     const mapped = mapPrismaError(prismaError("P9999"));
-    expect(mapped.statusCode).toBe(400);
-    expect(mapped.message).toBe("Error de base de datos");
+    expect(mapped.statusCode).toBe(500);
+    expect(mapped.message).toBe(INTERNAL_ERROR_MESSAGE);
+    expect(mapped.details).toBeUndefined();
   });
 
-  it("maps generic Error to 500", () => {
-    const mapped = mapPrismaError(new Error("boom"));
+  it("never leaks the message of an unexpected Error", () => {
+    const mapped = mapPrismaError(new Error("connect ECONNREFUSED 10.0.0.3:5432"));
     expect(mapped.statusCode).toBe(500);
-    expect(mapped.message).toBe("boom");
+    expect(mapped.message).toBe(INTERNAL_ERROR_MESSAGE);
   });
 });
 

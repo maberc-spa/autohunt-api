@@ -16,7 +16,7 @@ API REST para gestión de vehículos y mantenimientos. Construida con Node.js, E
 ```bash
 npm install
 cp .env.example .env
-# Configura DATABASE_URL, DIRECT_URL y JWT_SECRET
+# Configura DATABASE_URL, DIRECT_URL y JWT_SECRET (y MAILER_* / S3_* para producción)
 npm run prisma:generate
 npm run prisma:migrate
 npm run prisma:seed   # opcional: datos de demo
@@ -40,12 +40,18 @@ Base URL: `http://localhost:3000/api`
 | Método | Ruta | Descripción |
 |---|---|---|
 | POST | `/auth/register` | Registro de usuario |
-| POST | `/auth/login` | Inicio de sesión (devuelve JWT) |
+| POST | `/auth/login` | Inicio de sesión (devuelve JWT, o un desafío 2FA) |
+| POST | `/auth/verify-2fa` · `/auth/resend-2fa` | Código de verificación por correo |
+| POST | `/auth/forgot-password` | Envía un código para restablecer la contraseña (misma respuesta exista o no la cuenta) |
+| POST | `/auth/reset-password` | `{ challengeId, code, newPassword }`: cambia la contraseña, cierra las otras sesiones e inicia sesión |
 | GET | `/auth/me` | Perfil del usuario autenticado |
+| GET | `/features` | Funciones activas en este despliegue (`documents`, `planPurchases`, `passwordReset`) |
+
+Las sesiones se revocan al cambiar o restablecer la contraseña (`PUT /users/me/password` devuelve un token nuevo para el dispositivo actual).
 
 Incluye el token en rutas protegidas: `Authorization: Bearer <token>`
 
-### Catálogos (GET público, escritura con token)
+### Catálogos (GET público, escritura solo `ADMIN`)
 
 `/countries`, `/brands`, `/models`, `/vehicle-types`, `/maintenance-types`
 
@@ -59,6 +65,9 @@ Incluye el token en rutas protegidas: `Authorization: Bearer <token>`
 | User maintenances | `/user-maintenances` |
 | Maintenance details | `/maintenance-details` |
 | Decodificar VIN | `GET /vin/:vin` |
+| Documentos | `GET/POST /vehicles/:id/documents[/presign|/confirm]`, `GET /documents/:id/download`, `PUT/DELETE /documents/:id` |
+
+Los documentos se guardan en un bucket S3/R2 privado. La app pide una URL firmada (`presign`), sube el archivo directo al bucket y confirma; la API verifica que el archivo subido coincida en tamaño y tipo. Para abrirlo pide `GET /documents/:id/download`, que devuelve una URL firmada de 5 minutos (`attachment`, nunca se sirve como página web). Sin `S3_*` configurado los endpoints responden `503`.
 
 `PUT /users/me` acepta `username`, `email`, `firstName`, `lastName`, `phone` y `countryId`. Para cambiar el `email` de una cuenta con contraseña hay que enviar también `currentPassword`. `role` y `plan` no se pueden modificar desde aquí.
 
@@ -163,7 +172,7 @@ Imagen multi-stage sobre `node:26-alpine` (npm 12 solo en la etapa de build; el 
 curl -fsSL https://get.docker.com | sh
 
 # Configurar y desplegar
-cp .env.example .env   # completar DATABASE_URL, DIRECT_URL, JWT_SECRET, API_PUBLIC_URL
+cp .env.example .env   # completar DATABASE_URL, DIRECT_URL, JWT_SECRET, MAILER_*, S3_*
 ./scripts/deploy.sh    # pull + build + migraciones + up -d + espera healthy + limpieza
 ./scripts/deploy.sh rollback   # vuelve a la imagen anterior (no revierte migraciones)
 ```

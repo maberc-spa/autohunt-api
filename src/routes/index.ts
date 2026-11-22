@@ -18,10 +18,12 @@ import maintenanceDetailRoutes from "./maintenance-detail.routes";
 import adminRoutes from "./admin.routes";
 import vinRoutes from "./vin.routes";
 import catalogRoutes from "./catalog.routes";
+import featuresRoutes from "./features.routes";
 
 const router = Router();
 
 router.use("/health", healthRoutes);
+router.use("/features", featuresRoutes);
 router.use("/auth", authRoutes);
 router.use("/countries", countryRoutes);
 router.use("/brands", brandRoutes);

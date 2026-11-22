@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../config/database";
+import { AppError } from "../utils/errors";
 
 /**
  * The app picks brand and model from the vehicle catalog (auto-db-api), whose ids are not ours,
@@ -31,22 +32,28 @@ const findOrCreate = async <T>(
 export type VehicleRefNames = {
   brandName: string;
   modelName: string;
-  /** Country for a brand we don't have yet (the catalog's brand country isn't in our table). */
-  countryId: number;
+  /** Origin country for a brand we don't have yet; an existing brand keeps its own. */
+  countryId?: number;
 };
 
+/** Our brand and model ids, plus the brand's country, which is where the vehicle comes from. */
 export const resolveBrandAndModel = async ({
   brandName,
   modelName,
   countryId,
-}: VehicleRefNames): Promise<{ brandId: number; modelId: number }> => {
+}: VehicleRefNames): Promise<{ brandId: number; modelId: number; countryId: number }> => {
   const brand = await findOrCreate(
     () =>
       prisma.brand.findFirst({
         where: { name: { equals: brandName, mode: "insensitive" } },
         orderBy: { id: "asc" },
       }),
-    () => prisma.brand.create({ data: { name: brandName, countryId } })
+    () => {
+      if (countryId === undefined) {
+        throw new AppError(400, "Indica el país de origen de la marca");
+      }
+      return prisma.brand.create({ data: { name: brandName, countryId } });
+    }
   );
   const model = await findOrCreate(
     () =>
@@ -56,5 +63,5 @@ export const resolveBrandAndModel = async ({
       }),
     () => prisma.model.create({ data: { name: modelName, brandId: brand.id } })
   );
-  return { brandId: brand.id, modelId: model.id };
+  return { brandId: brand.id, modelId: model.id, countryId: brand.countryId };
 };

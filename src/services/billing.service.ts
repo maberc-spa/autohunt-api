@@ -6,8 +6,13 @@ export type UpgradePlanResult = {
 };
 
 /**
- * Stub billing service. Wire to in_app_purchase / RevenueCat / Stripe later.
+ * Paid plans are off until a real payment provider (Google Play Billing / RevenueCat) is wired
+ * here. BILLING_STUB_ENABLED=true turns on free simulated upgrades for testing, never in
+ * production.
  */
+export const isBillingEnabled = (): boolean =>
+  process.env.NODE_ENV !== "production" && process.env.BILLING_STUB_ENABLED === "true";
+
 export const purchasePlan = async (
   userId: number,
   plan: UserPlan

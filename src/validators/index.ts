@@ -8,8 +8,17 @@ import {
 
 const optionalInt = z.coerce.number().int().positive().optional().nullable();
 
+/** Trimmed and lowercased, so the same address can't become two accounts. */
+const emailSchema = z.string().trim().toLowerCase().email("Correo inválido").max(255);
+
+const passwordSchema = z
+  .string()
+  .min(8, "La contraseña debe tener al menos 8 caracteres")
+  .max(128);
+
 const usernameSchema = z
   .string()
+  .trim()
   .min(3)
   .max(30)
   .regex(/^[a-zA-Z0-9_]+$/);
@@ -45,11 +54,21 @@ export const updateVehicleTypeSchema = createVehicleTypeSchema.partial();
 
 export const registerSchema = z.object({
   username: usernameSchema,
-  firstName: z.string().min(1).max(50),
-  lastName: z.string().min(1).max(50),
-  email: z.string().email(),
-  password: z.string().min(8).max(128),
+  firstName: z.string().trim().min(1).max(50),
+  lastName: z.string().trim().min(1).max(50),
+  email: emailSchema,
+  password: passwordSchema,
   countryId: optionalInt,
+});
+
+export const checkUsernameParamsSchema = z.object({ username: usernameSchema });
+
+export const forgotPasswordSchema = z.object({ email: emailSchema });
+
+export const resetPasswordSchema = z.object({
+  challengeId: z.string().uuid(),
+  code: z.string().length(6).regex(/^\d+$/),
+  newPassword: passwordSchema,
 });
 
 export const loginSchema = z.object({
@@ -64,15 +83,6 @@ export const verifyTwoFactorSchema = z.object({
 
 export const resendTwoFactorSchema = z.object({
   challengeId: z.string().uuid(),
-});
-
-export const socialLoginSchema = z.object({
-  provider: z.enum(["GOOGLE", "APPLE"]),
-  idToken: z.string().min(1),
-  email: z.string().email().optional(),
-  firstName: z.string().min(1).max(50).optional(),
-  lastName: z.string().min(1).max(50).optional(),
-  username: z.string().min(3).max(30).optional(),
 });
 
 export const upgradePlanSchema = z.object({
@@ -112,7 +122,7 @@ export const createUserSchema = registerSchema;
 
 export const updateUserSchema = z.object({
   username: usernameSchema.optional(),
-  email: z.string().trim().email().optional(),
+  email: emailSchema.optional(),
   // Required to change the email of an account that has a password.
   currentPassword: z.string().min(1).max(128).optional(),
   firstName: z.string().trim().min(1).max(50).optional(),
@@ -129,7 +139,7 @@ export const updateUserSchema = z.object({
 
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1).max(128).optional(),
-  newPassword: z.string().min(8).max(128),
+  newPassword: passwordSchema,
 });
 
 /**
@@ -164,7 +174,11 @@ const vehicleFields = z.object({
   brandName: z.string().trim().min(1).max(100),
   modelName: z.string().trim().min(1).max(100),
   vehicleTypeId: z.coerce.number().int().positive(),
-  countryId: z.coerce.number().int().positive(),
+  /**
+   * A vehicle comes from its brand's country, so this is only the origin of a brand we don't have
+   * yet (one typed by hand, or a catalog brand new to us).
+   */
+  countryId: z.coerce.number().int().positive().optional(),
   fuelTypeId: z.coerce.number().int().positive(),
   cylinder: z.coerce.number().positive().max(20).optional().nullable(),
   year: z.coerce.number().int().min(1886).max(2100).optional().nullable(),

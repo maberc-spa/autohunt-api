@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { prisma } from "../config/database";
 import { AppError, sendError } from "../utils/errors";
 import { comparePassword, hashPassword } from "../utils/password";
+import { emailEquals } from "../utils/email";
+import { signToken } from "../utils/jwt";
 import { formatUserProfile, userProfileSelect } from "../utils/user-profile";
 import { deleteUserWithData } from "../services/user-deletion.service";
 
@@ -51,7 +53,8 @@ class UserController {
         throw new AppError(404, "Usuario no encontrado");
       }
 
-      const emailChanged = email !== undefined && email !== current.email;
+      const emailChanged =
+        email !== undefined && email !== current.email.toLowerCase();
       const usernameChanged =
         username !== undefined && username !== current.username;
 
@@ -66,7 +69,12 @@ class UserController {
         }
       }
 
-      if (emailChanged && (await prisma.user.findUnique({ where: { email } }))) {
+      if (
+        emailChanged &&
+        (await prisma.user.findFirst({
+          where: { email: emailEquals(email), NOT: { id: userId } },
+        }))
+      ) {
         throw new AppError(409, "Ese correo ya está en uso");
       }
 
@@ -125,14 +133,26 @@ class UserController {
         }
       }
 
-      await prisma.user.update({
+      // Signs every other device out; this one gets a token for the new session version.
+      const updated = await prisma.user.update({
         where: { id: userId },
-        data: { password: await hashPassword(newPassword) },
+        data: {
+          password: await hashPassword(newPassword),
+          sessionVersion: { increment: 1 },
+        },
+        select: { id: true, email: true, sessionVersion: true },
       });
 
       res.json({
         success: true,
-        message: "Contraseña actualizada exitosamente",
+        data: {
+          token: signToken({
+            userId: updated.id,
+            email: updated.email,
+            sessionVersion: updated.sessionVersion,
+          }),
+        },
+        message: "Contraseña actualizada. Cerramos la sesión en tus otros dispositivos.",
       });
     } catch (error) {
       sendError(res, error);

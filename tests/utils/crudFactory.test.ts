@@ -93,7 +93,7 @@ describe("createCrudController", () => {
     expect(res.statusCode).toBe(409);
     expect(res.body).toMatchObject({
       success: false,
-      message: "Registro duplicado",
+      message: "Ese registro ya existe",
     });
   });
 

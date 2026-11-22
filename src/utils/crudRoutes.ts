@@ -3,6 +3,7 @@ import { ZodSchema } from "zod";
 import { createCrudController } from "./crudFactory";
 import { validate, idParamSchema } from "../middleware/validate-request";
 import { authenticate } from "../middleware/auth";
+import { requireAdmin } from "../middleware/require-admin";
 import { publicReadLimiter } from "../middleware/rate-limit";
 
 type CrudRouteSchemas = {
@@ -23,7 +24,8 @@ export const createCrudRoutes = (
   const readGuards: RequestHandler[] = options?.publicRead
     ? [publicReadLimiter]
     : [authenticate];
-  const writeGuards: RequestHandler[] = [authenticate];
+  // Shared catalogs (brands, countries, fuel types...): only admins can change them.
+  const writeGuards: RequestHandler[] = [authenticate, requireAdmin];
 
   router.get("/", ...readGuards, controller.getAll);
   router.get("/:id", ...readGuards, validate(idParamSchema, "params"), controller.getById);

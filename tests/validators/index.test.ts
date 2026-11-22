@@ -158,7 +158,13 @@ describe("validators", () => {
       expect(result.success).toBe(false);
     });
 
-    const base = { name: "Auto", vehicleTypeId: 1, countryId: 1, fuelTypeId: 1 };
+    const base = { name: "Auto", vehicleTypeId: 1, fuelTypeId: 1 };
+
+    it("doesn't need a country: the vehicle takes its brand's", () => {
+      expect(
+        createVehicleSchema.safeParse({ ...base, brandName: "Toyota", modelName: "RAV4" }).success
+      ).toBe(true);
+    });
 
     it("accepts brand and model by name (catalog pick or free text)", () => {
       const result = createVehicleSchema.safeParse({

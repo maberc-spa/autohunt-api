@@ -11,8 +11,6 @@ class HealthController {
         version: "1.0.0",
         status: "healthy",
         timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV || "development",
       },
     });
   }
@@ -27,11 +25,11 @@ class HealthController {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
+      console.error("Readiness: base de datos no disponible", error);
       res.status(503).json({
         success: false,
         status: "not ready",
         database: "disconnected",
-        error: error instanceof Error ? error.message : "Error desconocido",
       });
     }
   }
