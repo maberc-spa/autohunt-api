@@ -20,9 +20,21 @@ describe("mailer", () => {
     await sendEmail({ to: "a@x.cl", subject: "S", text: "T", html: "<p>H</p>" });
 
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://mailer.test/send");
-    expect(init.headers.Authorization).toBe("Bearer key");
+    expect(url).toBe("https://mailer.test/email/send");
+    expect(init.headers["X-Api-Key"]).toBe("key");
+    expect(init.headers.Authorization).toBeUndefined();
     expect(JSON.parse(init.body)).toEqual({ to: "a@x.cl", subject: "S", text: "T", html: "<p>H</p>" });
+  });
+
+  it("defaults to the deployed maberc mailer when only the key is set", async () => {
+    delete process.env.MAILER_BASE_URL;
+    process.env.MAILER_API_KEY = "key";
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await sendEmail({ to: "a@x.cl", subject: "S", text: "T", html: "H" });
+
+    expect(fetchMock.mock.calls[0][0]).toBe("https://mailer.maberc.com/email/send");
   });
 
   it("fails with 503 when the mailer rejects the request", async () => {

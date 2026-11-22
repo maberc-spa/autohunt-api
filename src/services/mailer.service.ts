@@ -1,8 +1,9 @@
 import { AppError } from "../utils/errors";
 
 /**
- * Client for the maberc mailer (POST /send, Resend behind it). Configured with
- * MAILER_BASE_URL + MAILER_API_KEY; MAILER_FROM is optional (the mailer has a default sender).
+ * Client for the maberc mailer (POST /email/send, Resend behind it). Authenticates as a
+ * service client with MAILER_API_KEY (one of the mailer's SERVICE_API_KEYS), sent as X-Api-Key.
+ * MAILER_BASE_URL defaults to the deployed mailer. Emails go out from the mailer's own sender.
  */
 export type SendEmailParams = {
   to: string;
@@ -13,10 +14,11 @@ export type SendEmailParams = {
 
 const TIMEOUT_MS = 10_000;
 
+const DEFAULT_BASE_URL = "https://mailer.maberc.com";
+
 const readConfig = () => ({
-  baseUrl: process.env.MAILER_BASE_URL?.trim().replace(/\/+$/, ""),
+  baseUrl: (process.env.MAILER_BASE_URL?.trim() || DEFAULT_BASE_URL).replace(/\/+$/, ""),
   apiKey: process.env.MAILER_API_KEY?.trim(),
-  from: process.env.MAILER_FROM?.trim() || undefined,
 });
 
 export const isMailerConfigured = (): boolean => {
@@ -28,11 +30,11 @@ const unavailable = () =>
   new AppError(503, "No pudimos enviarte el correo. Intenta de nuevo en unos minutos.");
 
 export const sendEmail = async (params: SendEmailParams): Promise<void> => {
-  const { baseUrl, apiKey, from } = readConfig();
+  const { baseUrl, apiKey } = readConfig();
 
   if (!baseUrl || !apiKey) {
     if (process.env.NODE_ENV === "production") {
-      console.error("[mailer] MAILER_BASE_URL / MAILER_API_KEY no configurados");
+      console.error("[mailer] MAILER_API_KEY no configurada");
       throw unavailable();
     }
     // Development: print the email so the flow can be tested without a mailer.
@@ -42,13 +44,13 @@ export const sendEmail = async (params: SendEmailParams): Promise<void> => {
 
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}/send`, {
+    response = await fetch(`${baseUrl}/email/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        "X-Api-Key": apiKey,
       },
-      body: JSON.stringify({ ...(from ? { from } : {}), ...params }),
+      body: JSON.stringify(params),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (error) {
@@ -57,7 +59,11 @@ export const sendEmail = async (params: SendEmailParams): Promise<void> => {
   }
 
   if (!response.ok) {
-    console.error(`[mailer] El mailer respondió ${response.status}`);
+    console.error(
+      response.status === 401
+        ? "[mailer] El mailer rechazó MAILER_API_KEY (401): revisa SERVICE_API_KEYS en el mailer"
+        : `[mailer] El mailer respondió ${response.status}`
+    );
     throw unavailable();
   }
 };
